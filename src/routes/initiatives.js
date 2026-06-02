@@ -1,4 +1,6 @@
 import express from 'express';
+import { validate } from '../middlewares/validate.js';
+import { initiativeSchema } from '../schemas/initiative.schema.js';
 
 const router = express.Router();
 
@@ -7,7 +9,7 @@ const initiatives  = [
   { id: 2, nome: "Ação Agasalho CE", tipo: "acao", categoria: "vestuário", bairro: "Messejana", cidade: "Fortaleza" }
 ];
 
-router.post('/', (req, res) => {
+router.post('/', validate(initiativeSchema), (req, res) => {
     initiatives.push(req.body);
     res.status(201).json(initiatives);
 });
@@ -36,7 +38,7 @@ router.delete('/:id', (req, res) => {
     
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', validate(initiativeSchema), (req, res) => {
     const id = Number(req.params.id);
     const index = initiatives.findIndex(i => i.id === id);
     if (index === -1) {
