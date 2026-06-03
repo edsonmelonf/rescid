@@ -1,0 +1,16 @@
+@media(max-width: 768px) {
+
+  .header-content {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+}

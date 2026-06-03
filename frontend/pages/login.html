@@ -1,0 +1,341 @@
+HTML
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RESCID — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+    body {
+      font-family: 'Sora', sans-serif;
+      background: #d0d8e4;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+ 
+    /* ───── CARD PRINCIPAL ───── */
+    .login-card {
+      width: 100%;
+      max-width: 820px;
+      min-height: 500px;
+      background: rgba(255,255,255,0.35);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(30,58,95,0.12);
+      border-radius: 24px;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+ 
+    /* ───── PAINEL DE FORMULÁRIO ───── */
+    .form-panel {
+      width: 50%;
+      padding: 48px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0;
+      background: rgba(255,255,255,0.6);
+      position: relative;
+      z-index: 2;
+      transition: transform 0.6s ease;
+    }
+ 
+    .form-panel h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1e3a5f;
+      margin-bottom: 6px;
+    }
+ 
+    .form-panel p.sub {
+      font-size: 13px;
+      color: #5a7a9a;
+      margin-bottom: 28px;
+    }
+ 
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+ 
+    .form-group input {
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1.5px solid rgba(30,58,95,0.18);
+      background: rgba(255,255,255,0.7);
+      font-family: inherit;
+      font-size: 13px;
+      color: #1e3a5f;
+      outline: none;
+      transition: border 0.2s, background 0.2s;
+    }
+ 
+    .form-group input::placeholder { color: #8aa8c8; }
+    .form-group input:focus {
+      border-color: #0ea5e9;
+      background: rgba(255,255,255,0.95);
+    }
+ 
+    .forgot {
+      font-size: 12px;
+      color: #0ea5e9;
+      text-align: right;
+      text-decoration: none;
+      margin-top: -6px;
+      margin-bottom: 8px;
+      display: block;
+    }
+ 
+    .forgot:hover { text-decoration: underline; }
+ 
+    .btn-main {
+      width: 100%;
+      padding: 13px;
+      border-radius: 10px;
+      border: none;
+      background: #0ea5e9;
+      color: #fff;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(14,165,233,0.35);
+      transition: opacity 0.2s, transform 0.1s;
+    }
+ 
+    .btn-main:hover { opacity: 0.88; transform: translateY(-1px); }
+ 
+    .error-msg {
+      font-size: 12px;
+      color: #e53e3e;
+      margin-top: 8px;
+      display: none;
+    }
+ 
+    /* ───── PAINEL LATERAL AZUL ───── */
+    .side-panel {
+      width: 50%;
+      background: linear-gradient(135deg, #1e3a5f 0%, #0a4a6a 50%, #0ea5e9 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 40px;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+      transition: transform 0.6s ease;
+    }
+ 
+    .side-panel .logo {
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+ 
+    .side-panel .logo-sub {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 32px;
+    }
+ 
+    .side-panel h3 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+ 
+    .side-panel p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+ 
+    .btn-outline-white {
+      padding: 11px 32px;
+      border-radius: 25px;
+      border: 2px solid rgba(255,255,255,0.7);
+      background: transparent;
+      color: #fff;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: background 0.2s, color 0.2s;
+    }
+ 
+    .btn-outline-white:hover {
+      background: rgba(255,255,255,0.15);
+    }
+ 
+    /* ───── ANIMAÇÃO DE TROCA ───── */
+    .login-card.signup-mode .form-panel {
+      transform: translateX(100%);
+    }
+ 
+    .login-card.signup-mode .side-panel {
+      transform: translateX(-100%);
+    }
+ 
+    /* Painéis sobrepostos para animação */
+    .login-card {
+      overflow: hidden;
+    }
+ 
+    /* Esconde campos extras no login */
+    .signup-only { display: none; }
+    .login-card.signup-mode .signup-only { display: flex; flex-direction: column; gap: 12px; }
+    .login-card.signup-mode .login-only { display: none; }
+ 
+    /* Textos alternativos */
+    .text-login { display: block; }
+    .text-signup { display: none; }
+    .login-card.signup-mode .text-login { display: none; }
+    .login-card.signup-mode .text-signup { display: block; }
+ 
+    @media (max-width: 640px) {
+      .login-card { flex-direction: column; max-width: 420px; }
+      .form-panel, .side-panel { width: 100%; }
+      .login-card.signup-mode .form-panel { transform: none; }
+      .login-card.signup-mode .side-panel { transform: none; }
+      .side-panel { min-height: 200px; padding: 32px 24px; }
+      .form-panel { padding: 36px 24px; }
+    }
+  </style>
+</head>
+<body>
+ 
+  <div class="login-card" id="loginCard">
+ 
+    <!-- PAINEL DO FORMULÁRIO -->
+    <div class="form-panel">
+ 
+      <!-- TÍTULO LOGIN -->
+      <div class="text-login">
+        <h2>Bem-vindo de volta!</h2>
+        <p class="sub">Entre na sua conta para continuar</p>
+      </div>
+ 
+      <!-- TÍTULO CADASTRO -->
+      <div class="text-signup">
+        <h2>Criar conta</h2>
+        <p class="sub">Preencha os dados para se cadastrar</p>
+      </div>
+ 
+      <!-- CAMPOS DE LOGIN -->
+      <div class="form-group login-only">
+        <input type="email" id="loginEmail" placeholder="Seu e-mail" />
+        <input type="password" id="loginSenha" placeholder="Sua senha" />
+      </div>
+      <a href="#" class="forgot login-only">Esqueceu a senha?</a>
+ 
+      <!-- CAMPOS DE CADASTRO -->
+      <div class="signup-only">
+        <input type="text" id="cadNome" placeholder="Nome completo" />
+        <input type="email" id="cadEmail" placeholder="E-mail" />
+        <input type="password" id="cadSenha" placeholder="Senha" />
+        <input type="text" id="cadCidade" placeholder="Cidade" />
+        <input type="text" id="cadCodigo" placeholder="Código de convite" />
+      </div>
+ 
+      <span class="error-msg" id="errorMsg">Dados inválidos. Tente novamente.</span>
+ 
+      <!-- BOTÃO -->
+      <button class="btn-main" id="mainBtn" onclick="handleSubmit()">
+        <span class="text-login">Entrar</span>
+        <span class="text-signup">Cadastrar</span>
+      </button>
+ 
+    </div>
+ 
+    <!-- PAINEL LATERAL -->
+    <div class="side-panel">
+      <div class="logo">RESCID</div>
+      <div class="logo-sub">Ações sociais disponíveis</div>
+ 
+      <!-- TEXTO QUANDO ESTÁ NO LOGIN -->
+      <div class="text-login">
+        <h3>Ainda não tem conta?</h3>
+        <p>Cadastre-se agora e faça parte da nossa rede de ações sociais.</p>
+        <button class="btn-outline-white" onclick="toggleMode()">CADASTRAR</button>
+      </div>
+ 
+      <!-- TEXTO QUANDO ESTÁ NO CADASTRO -->
+      <div class="text-signup">
+        <h3>Já tem uma conta?</h3>
+        <p>Faça login e acompanhe as ações sociais da sua região.</p>
+        <button class="btn-outline-white" onclick="toggleMode()">ENTRAR</button>
+      </div>
+    </div>
+ 
+  </div>
+ 
+  <script>
+    function toggleMode() {
+      document.getElementById('loginCard').classList.toggle('signup-mode');
+      document.getElementById('errorMsg').style.display = 'none';
+    }
+ 
+    function handleSubmit() {
+      const isSignup = document.getElementById('loginCard').classList.contains('signup-mode');
+ 
+      if (isSignup) {
+        const nome   = document.getElementById('cadNome').value.trim();
+        const email  = document.getElementById('cadEmail').value.trim();
+        const senha  = document.getElementById('cadSenha').value.trim();
+        const cidade = document.getElementById('cadCidade').value.trim();
+        const codigo = document.getElementById('cadCodigo').value.trim();
+ 
+        if (!nome || !email || !senha || !cidade || !codigo) {
+          showError('Preencha todos os campos.');
+          return;
+        }
+ 
+        // Aqui vai a chamada para o back-end
+        // fetch('/api/users', { method: 'POST', body: JSON.stringify({ nome, email, senha, cidade, inviteCode: codigo }) })
+ 
+        console.log('Cadastro:', { nome, email, senha, cidade, inviteCode: codigo });
+        alert('Cadastro realizado! Aguarde aprovação.');
+ 
+      } else {
+        const email = document.getElementById('loginEmail').value.trim();
+        const senha = document.getElementById('loginSenha').value.trim();
+ 
+        if (!email || !senha) {
+          showError('Preencha e-mail e senha.');
+          return;
+        }
+ 
+        // Aqui vai a chamada para o back-end
+        // fetch('/api/login', { method: 'POST', body: JSON.stringify({ email, senha }) })
+ 
+        console.log('Login:', { email, senha });
+        window.location.href = 'admin.html';
+      }
+    }
+ 
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+  </script>
+ 
+</body>
+</html>

@@ -1,0 +1,14 @@
+.admin-page {
+  padding: 60px 0;
+}
+
+.admin-header {
+  margin-bottom: 40px;
+}
+
+.admin-form-card,
+.admin-list-card {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+}

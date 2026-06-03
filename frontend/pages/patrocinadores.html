@@ -1,0 +1,273 @@
+
+raw
+Patrocinadores · HTML
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RESCID — Patrocinadores</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Sora', sans-serif; background: #d0d8e4; display: flex; min-height: 100vh; }
+ 
+    /* ── SIDEBAR ── */
+    .sidebar { width: 220px; min-height: calc(100vh - 32px); background: rgba(30,58,95,0.12); backdrop-filter: blur(20px); border: 1px solid rgba(30,58,95,0.15); border-radius: 20px; display: flex; flex-direction: column; padding: 20px 12px; position: fixed; top: 16px; left: 16px; z-index: 100; transition: width 0.3s ease; overflow: hidden; }
+    .sidebar.collapsed { width: 60px; }
+    .sidebar-logo { display: flex; align-items: center; gap: 10px; padding: 6px 10px 18px; border-bottom: 1px solid rgba(30,58,95,0.12); margin-bottom: 10px; white-space: nowrap; }
+    .logo-icon { width: 32px; height: 32px; background: #0ea5e9; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 700; flex-shrink: 0; box-shadow: 0 4px 12px rgba(14,165,233,0.35); }
+    .logo-text { font-size: 15px; font-weight: 700; color: #1e3a5f; letter-spacing: 1px; transition: opacity 0.2s; }
+    .sidebar.collapsed .logo-text { opacity: 0; pointer-events: none; }
+    nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .nav-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 12px; color: #4a6a8a; text-decoration: none; font-size: 13px; font-weight: 500; white-space: nowrap; transition: background 0.18s, color 0.18s; }
+    .nav-item:hover { background: rgba(14,165,233,0.12); color: #1e3a5f; }
+    .nav-item.active { background: rgba(14,165,233,0.2); border: 1px solid rgba(14,165,233,0.35); color: #1e3a5f; font-weight: 600; }
+    .nav-icon { width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .sidebar.collapsed .nav-label { opacity: 0; pointer-events: none; }
+    .collapse-btn { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; color: #8aa8c8; cursor: pointer; background: rgba(30,58,95,0.08); border: 1px solid rgba(30,58,95,0.12); font-size: 13px; margin: 8px auto 0; transition: background 0.18s, color 0.18s, transform 0.3s; flex-shrink: 0; }
+    .collapse-btn:hover { background: rgba(14,165,233,0.15); color: #1e3a5f; }
+    .sidebar.collapsed .collapse-btn { transform: rotate(180deg); }
+    .sidebar-profile { display: flex; align-items: center; gap: 9px; padding: 12px 10px 4px; border-top: 1px solid rgba(30,58,95,0.12); margin-top: 8px; white-space: nowrap; }
+    .avatar { width: 30px; height: 30px; border-radius: 50%; background: #0ea5e9; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 8px rgba(14,165,233,0.3); }
+    .profile-name { font-size: 12px; font-weight: 600; color: #1e3a5f; transition: opacity 0.2s; }
+    .sidebar.collapsed .profile-name { opacity: 0; pointer-events: none; }
+ 
+    /* ── MAIN ── */
+    .main-wrapper { margin-left: calc(220px + 32px); margin-right: 16px; margin-top: 16px; margin-bottom: 16px; flex: 1; display: flex; flex-direction: column; transition: margin-left 0.3s ease; }
+    .main-wrapper.expanded { margin-left: calc(60px + 32px); }
+ 
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: rgba(255,255,255,0.35); backdrop-filter: blur(20px); border: 1px solid rgba(30,58,95,0.12); border-radius: 16px; margin-bottom: 16px; }
+    .topbar-title h1 { font-size: 16px; font-weight: 700; color: #1e3a5f; }
+    .topbar-title p { font-size: 11px; color: #5a7a9a; margin-top: 1px; }
+    .topbar-badge { background: rgba(14,165,233,0.15); border: 1px solid rgba(14,165,233,0.25); color: #0369a1; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 20px; }
+ 
+    .grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 16px; flex: 1; }
+ 
+    .glass-card { background: rgba(255,255,255,0.35); backdrop-filter: blur(16px); border: 1px solid rgba(30,58,95,0.12); border-radius: 18px; padding: 24px; }
+    .glass-card h2 { font-size: 15px; font-weight: 700; color: #1e3a5f; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(30,58,95,0.1); }
+ 
+    .form-group { display: flex; flex-direction: column; gap: 12px; }
+    .form-label { font-size: 11px; font-weight: 600; color: #5a7a9a; margin-bottom: -6px; }
+    .form-group input, .form-group select, .form-group textarea { padding: 11px 14px; border-radius: 10px; border: 1.5px solid rgba(30,58,95,0.15); background: rgba(255,255,255,0.6); font-family: inherit; font-size: 13px; color: #1e3a5f; outline: none; transition: border 0.2s; }
+    .form-group input::placeholder, .form-group textarea::placeholder { color: #8aa8c8; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #0ea5e9; background: rgba(255,255,255,0.9); }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+ 
+    .btn-save { width: 100%; padding: 13px; border-radius: 10px; border: none; background: #0ea5e9; color: #fff; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(14,165,233,0.3); transition: opacity 0.2s, transform 0.1s; margin-top: 4px; }
+    .btn-save:hover { opacity: 0.88; transform: translateY(-1px); }
+ 
+    /* grid de cards de patrocinadores */
+    .sponsors-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-height: 520px; overflow-y: auto; padding-right: 4px; }
+    .sponsors-grid::-webkit-scrollbar { width: 5px; }
+    .sponsors-grid::-webkit-scrollbar-thumb { background: rgba(30,58,95,0.2); border-radius: 10px; }
+ 
+    .sponsor-card { background: rgba(255,255,255,0.5); border: 1px solid rgba(30,58,95,0.1); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px; transition: box-shadow 0.2s, transform 0.2s; }
+    .sponsor-card:hover { box-shadow: 0 4px 16px rgba(30,58,95,0.1); transform: translateY(-2px); }
+ 
+    .sponsor-logo { width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #1e3a5f, #0ea5e9); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; font-weight: 700; }
+ 
+    .sponsor-name { font-size: 13px; font-weight: 700; color: #1e3a5f; }
+    .sponsor-seg { font-size: 11px; color: #5a7a9a; }
+    .sponsor-site { font-size: 11px; color: #0ea5e9; text-decoration: none; }
+    .sponsor-site:hover { text-decoration: underline; }
+ 
+    .nivel-tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; align-self: flex-start; }
+    .nivel-ouro  { background: rgba(234,179,8,0.15);  color: #92400e; border: 1px solid rgba(234,179,8,0.3); }
+    .nivel-prata { background: rgba(148,163,184,0.2); color: #334155; border: 1px solid rgba(148,163,184,0.35); }
+    .nivel-bronze{ background: rgba(180,120,60,0.15); color: #7c2d12; border: 1px solid rgba(180,120,60,0.3); }
+ 
+    .sponsor-actions { display: flex; gap: 6px; margin-top: 4px; }
+    .btn-icon { width: 28px; height: 28px; border-radius: 7px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: background 0.18s; }
+    .btn-edit   { background: rgba(14,165,233,0.12); color: #0369a1; }
+    .btn-edit:hover   { background: rgba(14,165,233,0.25); }
+    .btn-delete { background: rgba(239,68,68,0.1);   color: #dc2626; }
+    .btn-delete:hover { background: rgba(239,68,68,0.22); }
+ 
+    .empty-list { text-align: center; padding: 32px 0; font-size: 13px; color: #8aa8c8; grid-column: 1/-1; }
+ 
+    .success-msg { background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3); color: #15803d; font-size: 12px; font-weight: 600; padding: 10px 14px; border-radius: 10px; text-align: center; display: none; margin-top: 4px; }
+ 
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .sponsors-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 580px) { .sidebar { display: none; } .main-wrapper, .main-wrapper.expanded { margin-left: 16px; } }
+  </style>
+</head>
+<body>
+ 
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">R</div>
+      <span class="logo-text">RESCID</span>
+    </div>
+    <nav>
+      <a href="index.html" class="nav-item"><span class="nav-icon">🤝</span><span class="nav-label">Ações</span></a>
+      <a href="doacao.html" class="nav-item"><span class="nav-icon">💝</span><span class="nav-label">Doação</span></a>
+      <a href="patrocinadores.html" class="nav-item active"><span class="nav-icon">⭐</span><span class="nav-label">Patrocinadores</span></a>
+      <a href="login.html" class="nav-item"><span class="nav-icon">🛡️</span><span class="nav-label">Área Admin</span></a>
+    </nav>
+    <button class="collapse-btn" onclick="toggleSidebar()">◀</button>
+    <div class="sidebar-profile">
+      <div class="avatar">U</div>
+      <span class="profile-name">Usuário</span>
+    </div>
+  </aside>
+ 
+  <div class="main-wrapper" id="mainWrapper">
+ 
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Patrocinadores</h1>
+        <p>Gerencie os parceiros do RESCID</p>
+      </div>
+      <span class="topbar-badge" id="totalBadge">0 patrocinadores</span>
+    </header>
+ 
+    <div class="grid">
+ 
+      <!-- FORMULÁRIO -->
+      <div class="glass-card">
+        <h2>⭐ Cadastrar Patrocinador</h2>
+        <div class="form-group">
+ 
+          <span class="form-label">Nome da empresa</span>
+          <input type="text" id="fNome" placeholder="Nome do patrocinador" />
+ 
+          <span class="form-label">Segmento</span>
+          <input type="text" id="fSegmento" placeholder="Ex: Alimentação, Saúde..." />
+ 
+          <span class="form-label">Site</span>
+          <input type="url" id="fSite" placeholder="https://..." />
+ 
+          <span class="form-label">Contato (e-mail ou telefone)</span>
+          <input type="text" id="fContato" placeholder="contato@empresa.com" />
+ 
+          <div class="form-row">
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <span class="form-label">Nível de patrocínio</span>
+              <select id="fNivel">
+                <option value="ouro">⭐ Ouro</option>
+                <option value="prata">🥈 Prata</option>
+                <option value="bronze">🥉 Bronze</option>
+              </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <span class="form-label">Emoji / Ícone</span>
+              <input type="text" id="fEmoji" placeholder="🏪" maxlength="2" />
+            </div>
+          </div>
+ 
+          <span class="form-label">Descrição (opcional)</span>
+          <textarea id="fDescricao" placeholder="Breve descrição do patrocinador..."></textarea>
+ 
+          <button class="btn-save" onclick="salvarPatrocinador()">Cadastrar Patrocinador</button>
+          <div class="success-msg" id="successMsg">✅ Patrocinador cadastrado com sucesso!</div>
+        </div>
+      </div>
+ 
+      <!-- LISTA -->
+      <div class="glass-card">
+        <h2>🏢 Patrocinadores Disponíveis</h2>
+        <div class="sponsors-grid" id="sponsorsList">
+          <div class="empty-list">Nenhum patrocinador cadastrado ainda.</div>
+        </div>
+      </div>
+ 
+    </div>
+  </div>
+ 
+  <script>
+    let patrocinadores = [
+      { id: 1, nome: 'Mercado Central', segmento: 'Alimentação', site: '#', contato: 'mercado@central.com', nivel: 'ouro', emoji: '🏪', descricao: 'Parceiro em doações de alimentos.' },
+      { id: 2, nome: 'Padaria União', segmento: 'Alimentação', site: '#', contato: 'padaria@uniao.com', nivel: 'prata', emoji: '🥖', descricao: 'Doação de pães e alimentos.' },
+      { id: 3, nome: 'Instituto Educar', segmento: 'Educação', site: '#', contato: 'contato@educar.org', nivel: 'bronze', emoji: '📚', descricao: 'Suporte a ações educacionais.' },
+    ];
+ 
+    const nivelClass = { ouro: 'nivel-ouro', prata: 'nivel-prata', bronze: 'nivel-bronze' };
+    const nivelLabel = { ouro: '⭐ Ouro', prata: '🥈 Prata', bronze: '🥉 Bronze' };
+ 
+    function renderList() {
+      const grid = document.getElementById('sponsorsList');
+      document.getElementById('totalBadge').textContent = `${patrocinadores.length} patrocinador${patrocinadores.length !== 1 ? 'es' : ''}`;
+ 
+      if (patrocinadores.length === 0) {
+        grid.innerHTML = '<div class="empty-list">Nenhum patrocinador cadastrado ainda.</div>';
+        return;
+      }
+ 
+      grid.innerHTML = patrocinadores.map(p => `
+        <div class="sponsor-card">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="sponsor-logo">${p.emoji || p.nome[0]}</div>
+            <div>
+              <div class="sponsor-name">${p.nome}</div>
+              <div class="sponsor-seg">${p.segmento}</div>
+            </div>
+          </div>
+          <span class="nivel-tag ${nivelClass[p.nivel]}">${nivelLabel[p.nivel]}</span>
+          ${p.descricao ? `<div style="font-size:11px;color:#5a7a9a;">${p.descricao}</div>` : ''}
+          ${p.site && p.site !== '#' ? `<a class="sponsor-site" href="${p.site}" target="_blank">🔗 ${p.site}</a>` : ''}
+          <div class="sponsor-actions">
+            <button class="btn-icon btn-edit" onclick="editarPatrocinador(${p.id})" title="Editar">✏️</button>
+            <button class="btn-icon btn-delete" onclick="excluirPatrocinador(${p.id})" title="Excluir">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+ 
+    function salvarPatrocinador() {
+      const nome      = document.getElementById('fNome').value.trim();
+      const segmento  = document.getElementById('fSegmento').value.trim();
+      const site      = document.getElementById('fSite').value.trim();
+      const contato   = document.getElementById('fContato').value.trim();
+      const nivel     = document.getElementById('fNivel').value;
+      const emoji     = document.getElementById('fEmoji').value.trim();
+      const descricao = document.getElementById('fDescricao').value.trim();
+ 
+      if (!nome || !segmento) {
+        alert('Preencha pelo menos nome e segmento.');
+        return;
+      }
+ 
+      patrocinadores.unshift({ id: Date.now(), nome, segmento, site, contato, nivel, emoji, descricao });
+      ['fNome','fSegmento','fSite','fContato','fEmoji','fDescricao'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('fNivel').value = 'ouro';
+ 
+      const msg = document.getElementById('successMsg');
+      msg.style.display = 'block';
+      setTimeout(() => msg.style.display = 'none', 3000);
+ 
+      renderList();
+    }
+ 
+    function excluirPatrocinador(id) {
+      if (!confirm('Excluir este patrocinador?')) return;
+      patrocinadores = patrocinadores.filter(p => p.id !== id);
+      renderList();
+    }
+ 
+    function editarPatrocinador(id) {
+      const p = patrocinadores.find(p => p.id === id);
+      if (!p) return;
+      document.getElementById('fNome').value      = p.nome;
+      document.getElementById('fSegmento').value  = p.segmento;
+      document.getElementById('fSite').value      = p.site;
+      document.getElementById('fContato').value   = p.contato;
+      document.getElementById('fNivel').value     = p.nivel;
+      document.getElementById('fEmoji').value     = p.emoji;
+      document.getElementById('fDescricao').value = p.descricao;
+      patrocinadores = patrocinadores.filter(x => x.id !== id);
+      renderList();
+      document.getElementById('fNome').focus();
+    }
+ 
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+      document.getElementById('mainWrapper').classList.toggle('expanded');
+    }
+ 
+    renderList();
+  </script>
+</body>
+</html>
