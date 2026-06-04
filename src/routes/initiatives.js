@@ -15,7 +15,13 @@ router.post('/', validate(initiativeSchema), (req, res) => {
 });
 
 router.get('/', (req, res) => {
-    res.status(200).json(initiatives);
+    const { categoria, titulo } = req.query;
+    const filteredInitiatives = initiatives.filter(i => { 
+        if (categoria && i.categoria !== categoria) return false;
+        if (titulo && !i.titulo.toLowerCase().includes(titulo.toLowerCase())) return false;
+        return true;
+    });
+    res.status(200).json(filteredInitiatives);
 });
 
 router.get('/:id', (req, res) => {

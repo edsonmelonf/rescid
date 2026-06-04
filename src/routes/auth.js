@@ -1,6 +1,7 @@
 import express from 'express';
 import { supabase } from '../lib/supabase.js';
 import 'dotenv/config';
+import { authenticate } from '../middlewares/authenticate.js';
 
 const router = express.Router();
 
@@ -45,6 +46,11 @@ router.post('/login', async (req, res) => {
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }  
+});
+
+
+router.get('/me', authenticate, (req, res) => {
+    return res.status(200).json(req.user);
 });
 
 export default router;     
