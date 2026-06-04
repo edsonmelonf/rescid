@@ -13,5 +13,6 @@ export const initiativeSchema = z.object({
   cidade: z.string().min(1, 'Cidade é obrigatória'),
   bairro: z.string().min(1, 'Bairro é obrigatório'),
   rua: z.string().min(1, 'Rua é obrigatória'),
+  pixEmail: z.string().email('Email do Pix inválido'),
   imagemUrl: z.string().optional(),
 });
