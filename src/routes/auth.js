@@ -55,3 +55,14 @@ router.get('/me', authenticate, (req, res) => {
 
 export default router;     
 
+router.post('/logout', authenticate, async (req, res) => {
+    try {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            return res.status(400).json({ message: error.message });
+        }
+        return res.status(200).json({ message: 'Logout bem-sucedido' });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }       
+});
