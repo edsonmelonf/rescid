@@ -1,57 +1,83 @@
 import express from 'express';
 import { validate } from '../middlewares/validate.js';
 import { supplierSchema } from '../schemas/supplier.schema.js';
+import { supabase } from '../lib/supabase.js';
 
 const router = express.Router();
 
-const suppliers = [
-  { id: 1, nome: "Supermercado Lider", categoria: "alimentação", cidade: "Fortaleza", email: "contato@lider.com", telefone: "(85) 1234-5678" },
-  { id: 2, nome: "NL Roupas", categoria: "vestuário", cidade: "Fortaleza", email: "contato@nlroupas.com", telefone: "(85) 8765-4321" }
-];
 
-router.post('/', validate(supplierSchema), (req, res) => {
-    suppliers.push(req.body);
-    res.status(201).json(suppliers);
-});
 
-router.get('/', (req, res) => {
-    const { cidade, categoria } = req.query;
-    const filteredSuppliers = suppliers.filter(s => { 
-        if (categoria && s.categoria !== categoria) return false;
-        if (cidade && s.cidade !== cidade) return false;
-        return true;
-    });
-    res.status(200).json(filteredSuppliers);
-});
-
-router.get('/:id', (req, res) => {
-    const id = Number(req.params.id);
-    const supplier = suppliers.find(s => s.id === id);
-    if (!supplier) {
-        return res.status(404).json({ message: 'Fornecedor não encontrado' })
+router.post('/', validate(supplierSchema), async (req, res) => {
+    const { data, error } = await supabase.from('patrocinadores').insert({
+        nome: req.body.nome,
+        categoria: req.body.categoria,
+        site: req.body.site,
+        descricao: req.body.descricao,
+        telefone: req.body.telefone,
+        email: req.body.email,
+    }).select('*');
+    if (error) {
+        return res.status(500).json({ message: error.message });
     }
-    res.status(200).json(supplier);
+    res.status(201).json(data);
+});
+
+router.get('/', async (req, res) => {
+    const { categoria, cidade } = req.query;
+    let query = supabase.from('patrocinadores').select('*');
+    if (categoria) query = query.eq('categoria', categoria);
+    if (cidade) query = query.eq('cidade', cidade);
+    const { data, error } = await query;
+    if (error) {
+        return res.status(500).json({ message: error.message });
+    }
+    res.status(200).json(data);
 }); 
 
-router.delete('/:id', (req, res) => {
+router.get('/:id', async(req, res) => {
     const id = Number(req.params.id);
-    const index = suppliers.findIndex(s => s.id === id);
-    if (index === -1) {
-        return res.status(404).json({ message: 'Fornecedor não encontrado' })
+    const {data,error} = await supabase.from('patrocinadores').select('*').eq('id', id);
+    if (error) {
+        return res.status(500).json({ message: error.message });
     }
-    suppliers.splice(index, 1);
+    if (!data || data.length === 0) { 
+        return res.status(404).json({ message: 'Patrocinador não encontrado' })
+    }
+    res.status(200).json(data[0]);
+}); 
+
+router.delete('/:id', async (req, res) => {
+    const id = Number(req.params.id);
+    const { data, error } = await supabase.from('patrocinadores').delete().select().eq('id', id);
+    if (error) {
+        return res.status(500).json({ message: error.message });
+    }
+    if (!data || data.length === 0) {
+        return res.status(404).json({ message: 'Patrocinador não encontrado' });
+    }   
     res.status(204).send();
     
 });
 
-router.put('/:id', validate(supplierSchema), (req, res) => {
+router.put('/:id', validate(supplierSchema), async (req, res) => {
     const id = Number(req.params.id);
-    const index = suppliers.findIndex(s => s.id === id);
-    if (index === -1) {
-        return res.status(404).json({ message: 'Fornecedor não encontrado' })
+    const { data, error } = await supabase.from('patrocinadores').update({
+        nome: req.body.nome,
+        categoria: req.body.categoria,
+        site: req.body.site,
+        descricao: req.body.descricao,
+        telefone: req.body.telefone,
+        email: req.body.email,
+    }).select().eq('id', id);
+    if (error) {
+        return res.status(500).json({ message: error.message });
     }
-    suppliers[index] = {...suppliers[index], ...req.body };
-    res.status(200).json(suppliers[index]);
-});
+    if (!data || data.length === 0) {
+
+        return res.status(404).json({ message: 'Patrocinador não encontrado' });
+    }
+    res.status(200).json(data[0]);
+}); 
+
 
 export default router;

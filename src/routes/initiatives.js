@@ -1,57 +1,92 @@
 import express from 'express';
 import { validate } from '../middlewares/validate.js';
 import { initiativeSchema } from '../schemas/initiative.schema.js';
+import { supabase } from '../lib/supabase.js';
 
 const router = express.Router();
 
-const initiatives  = [
-  { id: 1, nome: "Sopão do Bom Samaritano", tipo: "grupo", categoria: "alimentação", bairro: "Aldeota", cidade: "Fortaleza" },
-  { id: 2, nome: "Ação Agasalho CE", tipo: "acao", categoria: "vestuário", bairro: "Messejana", cidade: "Fortaleza" }
-];
-
-router.post('/', validate(initiativeSchema), (req, res) => {
-    initiatives.push(req.body);
-    res.status(201).json(initiatives);
+router.post('/', validate(initiativeSchema), async (req, res) => {
+    const { data, error } = await supabase.from('acoes').insert({
+        titulo: req.body.titulo,
+        descricao: req.body.descricao,
+        categoria: req.body.categoria,
+        cidade: req.body.cidade,
+        estado: req.body.estado,
+        bairro: req.body.bairro,
+        numero: req.body.numero,
+        rua: req.body.rua,
+        complemento: req.body.complemento,
+        imagem: req.body.imagemUrl,
+        pix_email: req.body.pixEmail,
+        data_acao: req.body.data_acao,    
+    }
+    ).select('*');
+    if (error) {
+        return res.status(500).json({ message: error.message });
+    }
+    res.status(201).json(data);
 });
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     const { categoria, titulo } = req.query;
-    const filteredInitiatives = initiatives.filter(i => { 
-        if (categoria && i.categoria !== categoria) return false;
-        if (titulo && !i.titulo.toLowerCase().includes(titulo.toLowerCase())) return false;
-        return true;
-    });
-    res.status(200).json(filteredInitiatives);
+    let query = supabase.from('acoes').select('*');
+    if (categoria) query = query.eq('categoria', categoria);
+    if (titulo) query = query.ilike('titulo', `%${titulo}%`);
+    const { data, error } = await query;
+    if (error) {
+        return res.status(500).json({ message: error.message });
+    }
+    res.status(200).json(data);
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', async(req, res) => {
     const id = Number(req.params.id);
-    const initiative = initiatives.find(i => i.id === id);
-    if (!initiative) {
+    const { data, error } = await supabase.from('acoes').select('*').eq('id', id)
+    if (error) {
+        return res.status(500).json({ message: error.message });
+    }
+    if (!data || data.length === 0) { 
         return res.status(404).json({ message: 'Iniciativa não encontrada' })
     }
-    res.status(200).json(initiative);
+    res.status(200).json(data[0]);
 }); 
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     const id = Number(req.params.id);
-    const index = initiatives.findIndex(i => i.id === id);
-    if (index === -1) {
-        return res.status(404).json({ message: 'Iniciativa não encontrada' })
+    const { data, error } = await supabase.from('acoes').delete().select().eq('id', id)
+    if (error) {
+        return res.status(500).json({ message: error.message });
     }
-    initiatives.splice(index, 1);
+    if (!data || data.length === 0) {
+        return res.status(404).json({ message: 'Iniciativa não encontrada' });
+    }   
     res.status(204).send();
     
 });
 
-router.put('/:id', validate(initiativeSchema), (req, res) => {
+router.put('/:id', validate(initiativeSchema), async(req, res) => {
     const id = Number(req.params.id);
-    const index = initiatives.findIndex(i => i.id === id);
-    if (index === -1) {
-        return res.status(404).json({ message: 'Iniciativa não encontrada' })
+     const { data, error } = await supabase.from('acoes').update({
+          titulo: req.body.titulo,
+        descricao: req.body.descricao,
+        categoria: req.body.categoria,
+        cidade: req.body.cidade,
+        estado: req.body.estado,
+        bairro: req.body.bairro,
+        numero: req.body.numero,
+        rua: req.body.rua,
+        complemento: req.body.complemento,
+        imagem: req.body.imagemUrl,
+        pix_email: req.body.pixEmail,
+        data_acao: req.body.data_acao,    
+    }).eq('id', id).select('*');
+    if (error) {
+        return res.status(500).json({ message: error.message });
     }
-    initiatives[index] = {...initiatives[index], ...req.body };
-    res.status(200).json(initiatives[index]);
+    if (!data || data.length === 0) {
+        return res.status(404).json({ message: 'Iniciativa não encontrada' });
+    }
+    res.status(200).json(data[0]);
 });
 
 export default router;
