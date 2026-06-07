@@ -1,0 +1,32 @@
+.action-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.action-card img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+}
+
+.card-content {
+  padding: 24px;
+}
+
+.card-content h2 {
+  margin-bottom: 15px;
+}
+
+.card-content p {
+  color: var(--gray);
+  margin-bottom: 20px;
+}
+
+.card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}

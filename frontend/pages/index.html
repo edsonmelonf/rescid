@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RESCID — Plataforma de Ações Sociais</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome (Ícones das Redes Sociais) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Sora', sans-serif; background-color: #dbe2e9; padding: 16px; }
+    .app-container { max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+
+    .main-header {
+      background: #f0f4f8; 
+      border-radius: 24px;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+    .brand-link { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .logo-img-real { width: 44px; height: 44px; object-fit: contain; border-radius: 50%; }
+    .brand-meta h2 { font-size: 16px; font-weight: 700; color: #004b87; }
+    .brand-meta p { font-size: 9px; font-weight: 600; color: #0ea5e9; letter-spacing: 0.5px; }
+    .header-nav { display: flex; align-items: center; gap: 24px; }
+    .nav-anchor { color: #627d98; font-size: 14px; font-weight: 600; text-decoration: none; }
+    .btn-login-account { background: #bfe2f6; color: #004b87; font-size: 13px; font-weight: 700; padding: 10px 20px; border-radius: 12px; text-decoration: none; }
+
+    .hero-banner-container { background: #f0f4f8; border-radius: 24px; display: grid; grid-template-columns: 1.1fr 0.9fr; min-height: 400px; overflow: hidden; }
+    .hero-left-content { padding: 48px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+    .hero-main-title { font-size: 32px; font-weight: 700; color: #004b87; margin-bottom: 16px; }
+    .hero-desc-text { font-size: 14px; color: #627d98; margin-bottom: 28px; }
+    .hero-cta-btn { background-color: #0ea5e9; color: white; font-weight: 700; padding: 14px 28px; border: none; border-radius: 14px; cursor: pointer; }
+    .hero-right-mosaic { background: linear-gradient(135deg, #004b87, #0ea5e9); border-top-left-radius: 40% 100%; padding: 32px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .mosaic-pic { width: 100%; aspect-ratio: 1; border-radius: 12px; object-fit: cover; }
+
+    .filters-container {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    .search-wrap {
+      flex: 1;
+      position: relative;
+      min-width: 240px;
+    }
+    .search-wrap input {
+      width: 100%;
+      padding: 12px 16px 12px 40px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(30, 58, 95, 0.12);
+      background: #f0f4f8;
+      font-family: inherit;
+      font-size: 14px;
+      color: #004b87;
+      outline: none;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+    .search-wrap input:focus {
+      border-color: #0ea5e9;
+      background-color: #ffffff;
+    }
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 15px;
+      color: #627d98;
+      pointer-events: none;
+    }
+    .filter-select {
+      padding: 12px 16px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(30, 58, 95, 0.12);
+      background: #f0f4f8;
+      font-family: inherit;
+      font-size: 14px;
+      color: #004b87;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+      min-width: 200px;
+      transition: border-color 0.2s;
+    }
+    .filter-select:focus {
+      border-color: #0ea5e9;
+    }
+
+    .acoes-section { width: 100%; }
+    .section-header h2 { color: #004b87; font-size: 28px; margin-bottom: 4px; }
+    .section-header p { color: #627d98; font-size: 14px; margin-bottom: 20px; }
+       
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; width: 100%; }
+    .action-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: transform 0.2s; }
+    .action-card:hover { transform: translateY(-4px); }
+    .action-card img { width: 100%; height: 190px; object-fit: cover; }
+    .card-content { padding: 20px; }
+    .card-content h2 { color: #004b87; margin-bottom: 10px; font-size: 20px; }
+    .card-content p { color: #627d98; margin-bottom: 18px; line-height: 1.5; }
+    .card-info { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; color: #627d98; font-size: 14px; }
+    .btn-card { display: block; width: 100%; padding: 12px; border-radius: 12px; background: #0ea5e9; color: white; text-align: center; text-decoration: none; font-weight: 700; }
+
+    /* Estilos do Footer - Atualizado com fundo escuro institucional */
+    .main-footer {
+      background: #004b87;
+      border-radius: 24px;
+      padding: 40px 40px 24px 40px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+    .footer-top {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr;
+      gap: 40px;
+    }
+    .footer-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .footer-brand .brand-meta h2 { color: #ffffff; }
+    .footer-brand .brand-meta p { color: #0ea5e9; }
+    .footer-desc {
+      font-size: 14px;
+      color: #bfe2f6;
+      line-height: 1.6;
+      max-width: 360px;
+    }
+    .footer-nav-col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .footer-nav-col h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .footer-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .footer-links a {
+      font-size: 14px;
+      color: #bfe2f6;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s, transform 0.2s;
+      display: inline-block;
+    }
+    .footer-links a:hover {
+      color: #0ea5e9;
+      transform: translateX(4px);
+    }
+    .contact-info {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      font-size: 14px;
+      color: #bfe2f6;
+      font-weight: 600;
+    }
+    .social-media {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .social-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #bfe2f6;
+      text-decoration: none;
+      font-size: 18px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .social-btn:hover {
+      background: #0ea5e9;
+      color: white;
+    }
+    .footer-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.15);
+      width: 100%;
+    }
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #bfe2f6;
+      font-weight: 600;
+    }
+
+    @media (max-width: 868px) {
+      .footer-top {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+      .footer-bottom {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .filters-container {
+        flex-direction: column;
+        gap: 12px;
+      }
+      .filter-select {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <header class="main-header">
+      <a href="#" class="brand-link">
+        <img src="logo.png" class="logo-img-real" alt="Logo RESCID">
+        <div class="brand-meta">
+          <h2>RESCID</h2>
+          <p>PLATAFORMA DE AÇÕES SOCIAIS</p>
+        </div>
+      </a>
+      <a href="login.html" class="btn-login-account">Entrar</a>
+    </header>
+
+    <main class="hero-banner-container">
+      <div class="hero-left-content">
+        <h2 class="hero-main-title">Aprenda com a experiência de quem já transforma realidades</h2>
+        <p class="hero-desc-text">Um ano de integração <strong>RESCID + Comunidade</strong> promovendo o impacto social e o engajamento coletivo.</p>
+        <button class="hero-cta-btn">Saiba mais</button>
+      </div>
+      <div class="hero-right-mosaic">
+        <img class="mosaic-pic" src="https://images.unsplash.com/photo-1544027993-37dbfe43562a?w=150" alt="Ação">
+        <img class="mosaic-pic" src="https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=150" alt="Ação">
+        <img class="mosaic-pic" src="https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=150" alt="Ação">
+        <img class="mosaic-pic" src="https://images.unsplash.com/photo-1531482615713-2afd69097998?w=150" alt="Ação">
+      </div>
+    </main>
+
+    <section class="acoes-section">
+      <div class="section-header">
+        <h2>Ações em destaque</h2>
+        <p>Confira as oportunidades de impacto para hoje.</p>
+      </div>
+
+      <!-- Barra de Filtros Integrada -->
+      <div class="filters-container">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Pesquisar ações pelo título..." oninput="filterCards()" />
+        </div>
+
+        <select class="filter-select" id="filterCategoria" onchange="filterCards()">
+          <option value="">Todas as categorias</option>
+          <option value="arrecadacao">🍱 Arrecadação</option>
+          <option value="voluntariado">🌿 Voluntariado</option>
+          <option value="educacao">📚 Educação</option>
+          <option value="saude">🏥 Saúde</option>
+        </select>
+      </div>
+
+      <div class="cards-grid" id="cardsGrid"></div>
+    </section>
+
+    <!-- Footer Institucional Atualizado -->
+    <footer class="main-footer">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <a href="#" class="brand-link">
+            <img src="logo.png" class="logo-img-real" alt="Logo RESCID">
+            <div class="brand-meta">
+              <h2>RESCID</h2>
+              <p>PLATAFORMA DE AÇÕES SOCIAIS</p>
+            </div>
+          </a>
+          <p class="footer-desc">Plataforma de ações sociais voltada para integração comunitária, voluntariado e impacto social.</p>
+        </div>
+
+        <div class="footer-nav-col">
+          <h3>Links Rápidos</h3>
+          <ul class="footer-links">
+            <li><a href="#">Início</a></li>
+            <li><a href="#">Ações Sociais</a></li>
+            <li><a href="#">Sobre</a></li>
+            <li><a href="#">Contato</a></li>
+            <li><a href="login.html">Entrar</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-nav-col">
+          <h3>Contato e Redes</h3>
+          <ul class="contact-info">
+            <li>📧 contato@rescid.org</li>
+            <li>📍 Maceió, Alagoas</li>
+          </ul>
+          <div class="social-media">
+            <a href="#" class="social-btn" aria-label="Instagram">
+              <i class="fa-brands fa-instagram"></i>
+            </a>
+            <a href="#" class="social-btn" aria-label="Facebook">
+              <i class="fa-brands fa-facebook-f"></i>
+            </a>
+            <a href="#" class="social-btn" aria-label="LinkedIn">
+              <i class="fa-brands fa-linkedin-in"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-divider"></div>
+
+      <div class="footer-bottom">
+        <p>© 2026 RESCID — Todos os direitos reservados.</p>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let acoesDisponiveis = [];
+
+    function carregarAcoes(){
+      acoesDisponiveis = JSON.parse(localStorage.getItem('rescid_acoes')) || [];
+      renderizarCards(acoesDisponiveis);
+    }
+
+    function renderizarCards(listaAcoes) {
+      const cardsGrid = document.getElementById('cardsGrid');
+      
+      if(listaAcoes.length === 0){
+        cardsGrid.innerHTML = `
+          <p class="no-results" style="color: #627d98; grid-column: 1 / -1; font-size: 16px; padding: 24px 0;">
+            Nenhuma ação encontrada.
+          </p>`;
+        return;
+      }
+
+      cardsGrid.innerHTML = listaAcoes.map(acao => `
+        <article class="action-card">
+          <img src="${acao.imagem || 'https://via.placeholder.com/320x190/d0d8e4/004b87?text=Ação+Social'}" alt="${acao.titulo}">
+          <div class="card-content">
+            <h2>${acao.titulo}</h2>
+            <p>${acao.descricao}</p>
+            <div class="card-info">
+              <span>📅 ${acao.data || 'Data não informada'}</span>
+              <span>📍 ${acao.local || 'Local não informado'}</span>
+            </div>
+            <a href="detalhes.html?id=${acao.id}" class="btn-card">Ver detalhes</a>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function filterCards() {
+      const busca = document.getElementById('searchInput').value.toLowerCase().trim();
+      const categoriaSelecionada = document.getElementById('filterCategoria').value;
+
+      const listaFiltrada = acoesDisponiveis.filter(acao => {
+        const correspondeTitulo = acao.titulo.toLowerCase().includes(busca);
+        const correspondeCategoria = !categoriaSelecionada || 
+          (acao.categoria && acao.categoria.toLowerCase() === categoriaSelecionada.toLowerCase());
+
+        return correspondeTitulo && correspondeCategoria;
+      });
+
+      renderizarCards(listaFiltrada);
+    }
+
+    window.onload = carregarAcoes;
+  </script>
+</body>
+</html>

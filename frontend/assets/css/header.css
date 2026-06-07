@@ -1,0 +1,21 @@
+.header {
+  background: white;
+  padding: 30px 0;
+  margin-bottom: 40px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.subtitle {
+  color: var(--gray);
+  margin-top: 10px;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 15px;
+}
