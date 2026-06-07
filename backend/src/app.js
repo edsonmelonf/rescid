@@ -19,7 +19,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.use('/initiatives', authenticate, initiatives);
+app.use('/initiatives',initiatives);
 app.use('/users', authenticate, users);
 app.use('/suppliers', authenticate, suppliers);
 app.use('/auth', auth);
