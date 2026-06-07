@@ -6,7 +6,8 @@
   <title>RESCID — Login</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
  
@@ -399,54 +400,83 @@
   }
 
   // Validação e Submit
-  function handleSubmit() {
-    const isSignup = document.getElementById('loginCard').classList.contains('signup-mode');
- 
-    if (isSignup) {
-      const nome   = document.getElementById('cadNome').value.trim();
-      const email  = document.getElementById('cadEmail').value.trim();
-      const senha  = document.getElementById('cadSenha').value.trim();
-      const codigo = document.getElementById('cadCodigo').value.trim();
- 
-      if (!nome || !email || !senha || !codigo) { 
-        showError('Preencha todos os campos.'); 
-        return; 
-      }
-      if (senha.length < 8) { 
-        showError('A senha deve ter pelo menos 8 caracteres.'); 
-        return; 
-      }
- 
-      console.log('Cadastro enviado:', { nome, email, senha, inviteCode: codigo });
-      showToast('Cadastro realizado com sucesso!', 'success');
-      
+  async function handleSubmit() {
+  const isSignup = document.getElementById('loginCard').classList.contains('signup-mode');
+
+  // Desativa o botão para evitar clique duplo
+  const btn = document.querySelector('.btn-main');
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+
+  if (isSignup) {
+    const nome   = document.getElementById('cadNome').value.trim();
+    const email  = document.getElementById('cadEmail').value.trim();
+    const senha  = document.getElementById('cadSenha').value.trim();
+    const codigo = document.getElementById('cadCodigo').value.trim();
+
+    if (!nome || !email || !senha || !codigo) {
+      showError('Preencha todos os campos.');
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      return;
+    }
+    if (senha.length < 8) {
+      showError('A senha deve ter pelo menos 8 caracteres.');
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      return;
+    }
+
+    try {
+      // Chama a função do auth.js
+      // Nota: mandamos "nome" local mas a função converte para "nameFull"
+      await cadastrar(nome, email, senha, codigo);
+      showToast('Cadastro realizado! Faça o login.', 'success');
+
+      // Limpa os campos
       document.getElementById('cadNome').value = '';
       document.getElementById('cadEmail').value = '';
       document.getElementById('cadSenha').value = '';
       document.getElementById('cadCodigo').value = '';
-      checkSenha(''); 
-      
+      checkSenha('');
+
+      setTimeout(() => toggleMode(), 1500);
+
+    } catch (error) {
+      // Se o backend retornou erro (ex: código inválido), mostra aqui
+      showError(error.message || 'Erro ao cadastrar. Tente novamente.');
+    }
+
+  } else {
+    const email = document.getElementById('loginEmail').value.trim();
+    const senha = document.getElementById('loginSenha').value.trim();
+
+    if (!email || !senha) {
+      showError('Preencha e-mail e senha.');
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      return;
+    }
+
+    try {
+      // Chama a função do auth.js
+      // A função salva o token e redireciona
+      await login(email, senha);
+      showToast('Login realizado!', 'success');
       setTimeout(() => {
-        toggleMode();
-      }, 1000);
- 
-    } else {
-      const email = document.getElementById('loginEmail').value.trim();
-      const senha = document.getElementById('loginSenha').value.trim();
- 
-      if (!email || !senha) { 
-        showError('Preencha e-mail e senha.'); 
-        return; 
-      }
- 
-      console.log('Login executado:', { email, senha });
-      
-      // ALTERAÇÃO EXECUTADA AQUI: 
-      // O Toast e o setTimeout foram removidos. O redirecionamento ocorre imediatamente.
-      window.location.href = 'loading.html';
+        window.location.href = 'loading.html';
+      }, 800);
+
+    } catch (error) {
+      // Erros comuns: senha errada, email não cadastrado
+      showError(error.message || 'E-mail ou senha incorretos.');
     }
   }
- 
+
+  // Reativa o botão sempre ao final
+  btn.disabled = false;
+  btn.style.opacity = '1';
+}
   function showError(msg) {
     const el = document.getElementById('errorMsg');
     el.textContent = msg;
