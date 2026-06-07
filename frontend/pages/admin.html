@@ -6,10 +6,10 @@
   <title>RESCID — Painel Administrativo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="js/api.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/admin.js"></script>
-  <script src="js/suppliers.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/admin.js"></script>
+  <script src="../assets/js/suppliers.js"></script>
   <style>
     /* RESET E CONFIGURAÇÕES DE LAYOUT */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -824,56 +824,57 @@
   }
 
   async function salvarAcaoDoForm() {
-  const btn = document.getElementById('btnSalvarAcao');
-  btn.disabled = true;
-  btn.textContent = 'Salvando...';
+    const btn = document.getElementById('btnSalvarAcao');
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
 
-  try {
-    let imagemUrl = null;
+    try {
+      let imagemUrl = null;
 
-    // Se o usuário selecionou uma imagem, faz o upload primeiro
-    const arquivoInput = document.getElementById('fArquivoImagem');
-    if (arquivoInput.files && arquivoInput.files[0]) {
-      document.getElementById('fileLabel').innerText = '⏳ Enviando imagem...';
-      imagemUrl = await uploadImagem(arquivoInput.files[0]);
-      document.getElementById('fileLabel').innerText = '✅ Imagem enviada!';
-    }
+      // Se o usuário selecionou uma imagem, faz o upload primeiro
+      const arquivoInput = document.getElementById('fArquivoImagem');
+      if (arquivoInput.files && arquivoInput.files[0]) {
+        document.getElementById('fileLabel').innerText = '⏳ Enviando imagem...';
+        imagemUrl = await uploadImagem(arquivoInput.files[0]);
+        document.getElementById('fileLabel').innerText = '✅ Imagem enviada!';
+      }
 
-    // Monta os dados da ação com a URL da imagem já obtida
-    const dados = {
-      titulo:      document.getElementById('fTitulo').value.trim(),
-      descricao:   document.getElementById('fDesc').value.trim(),
-      data_acao:   document.getElementById('fData').value,
-      categoria:   document.getElementById('fCategoria').value,
-      rua:         document.getElementById('fRua').value.trim(),
-      bairro:      document.getElementById('fBairro').value.trim(),
-      numero:      document.getElementById('fNumero').value.trim(),
-      complemento: document.getElementById('fComplemento').value.trim(),
-      cidade:      document.getElementById('fCidade').value.trim(),
-      estado:      document.getElementById('fEstado').value.trim(),
-      pixEmail:    document.getElementById('fChavePix').value.trim(),
-      imagemUrl:   imagemUrl, // URL real do Supabase Storage
+      // Monta os dados da ação com a URL da imagem já obtida
+      const dados = {
+        titulo:      document.getElementById('fTitulo').value.trim(),
+        descricao:   document.getElementById('fDesc').value.trim(),
+        data_acao:   document.getElementById('fData').value,
+        horario:     document.getElementById('fHorario').value,
+        cep:         document.getElementById('fCep').value.trim(),
+        categoria:   document.getElementById('fCategoria').value,
+        rua:         document.getElementById('fRua').value.trim(),
+        bairro:      document.getElementById('fBairro').value.trim(),
+        numero:      document.getElementById('fNumero').value.trim(),
+        complemento: document.getElementById('fComplemento').value.trim(),
+        cidade:      document.getElementById('fCidade').value.trim(),
+        estado:      document.getElementById('fEstado').value.trim(),
+        pixEmail:    document.getElementById('fChavePix').value.trim(),
+        imagemUrl:   imagemUrl,
     };
+      await criarAcao(dados);
+      
+      // Limpa o formulário
+      document.getElementById('formCadastroAcao').reset();
+      document.getElementById('fileLabel').innerText = '📁 Clique para selecionar uma imagem';
+      imagemBase64Carregada = '';
 
-    await criarAcao(dados);
+      exibirNotificacaoSucesso('Sucesso!', 'Nova campanha cadastrada com sucesso.', async function () {
+        await carregarAcoes();
+        switchTab('acoes');
+      });
 
-    // Limpa o formulário
-    document.getElementById('formCadastroAcao').reset();
-    document.getElementById('fileLabel').innerText = '📁 Clique para selecionar uma imagem';
-    imagemBase64Carregada = '';
-
-    exibirNotificacaoSucesso('Sucesso!', 'Nova campanha cadastrada com sucesso.', async function () {
-      await carregarAcoes();
-      switchTab('acoes');
-    });
-
-  } catch (error) {
-    alert('Erro ao salvar ação: ' + error.message);
-    document.getElementById('fileLabel').innerText = '📁 Clique para selecionar uma imagem';
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Publicar Ação';
-  }
+    } catch (error) {
+      alert('Erro ao salvar ação: ' + error.message);
+      document.getElementById('fileLabel').innerText = '📁 Clique para selecionar uma imagem';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Publicar Ação';
+    }
 }
 
   // Guarda o ID antes de abrir o modal de confirmação

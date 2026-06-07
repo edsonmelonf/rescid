@@ -12,6 +12,6 @@ async function buscarIniciativas(filtros = {}) {
   const endpoint = query ? `/initiatives?${query}` : '/initiatives';
 
   // Busca da API — true significa que envia o token (rota autenticada)
-  const data = await request(endpoint, 'GET', null, true);
+  const data = await request(endpoint, 'GET', null, false);
   return data;
 }

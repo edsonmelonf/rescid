@@ -1,4 +1,4 @@
-// frontend/js/api.js
+// frontend/assets/js/api.js
 
 // URL base do backend
 // Durante desenvolvimento, o backend roda local
@@ -22,6 +22,10 @@ async function request(endpoint, method = 'GET', body = null, auth = false) {
 
   try {
     const response = await fetch(`${API_URL}${endpoint}`, options);
+
+    // Se a resposta não tem body (ex: DELETE retorna 204), retorna null
+    if (response.status === 204) return null;
+
     const data = await response.json();
 
     if (!response.ok) {
