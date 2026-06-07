@@ -1,5 +1,6 @@
 import express from 'express';
-import initiatives  from './routes/initiatives.js';
+import cors from 'cors'; // ← importação nova
+import initiatives from './routes/initiatives.js';
 import users from './routes/users.js';
 import suppliers from './routes/suppliers.js';
 import auth from './routes/auth.js';
@@ -8,6 +9,15 @@ import cep from './routes/cep.js';
 import upload from './routes/upload.js';
 
 const app = express();
+
+// Configura quais endereços podem falar com o backend
+// O Live Server abre em 127.0.0.1:5500 ou localhost:5500
+app.use(cors({
+  origin: ['http://127.0.0.1:5500', 'http://localhost:5500'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 app.use('/initiatives', authenticate, initiatives);
 app.use('/users', authenticate, users);
