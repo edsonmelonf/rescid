@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RESCID — Acessando Painel...</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome para ícones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Sora', sans-serif;
+      background-color: #dbe2e9;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    .loading-card {
+      background: #f0f4f8;
+      border-radius: 24px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0, 4b, 135, 0.08);
+      max-width: 400px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    /* Animação de entrada do Card */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Estilo do logótipo real para substituir o círculo estático */
+    .logo-img-real {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      border-radius: 50%;
+    }
+
+    .brand-meta h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #004b87;
+      text-align: left;
+    }
+
+    .brand-meta p {
+      font-size: 9px;
+      font-weight: 600;
+      color: #0ea5e9;
+      letter-spacing: 0.5px;
+      text-align: left;
+    }
+
+    /* Spinner Minimalista e Moderno */
+    .spinner-container {
+      position: relative;
+      width: 70px;
+      height: 70px;
+      margin: 10px 0;
+    }
+
+    .double-spinner {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border: 5px solid rgba(14, 165, 233, 0.1);
+      border-top-color: #0ea5e9;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .inner-spinner {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      border: 4px solid rgba(0, 75, 135, 0.1);
+      border-top-color: #004b87;
+      border-radius: 50%;
+      animation: spin-reverse 1.2s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes spin-reverse {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(-360deg); }
+    }
+
+    .loading-text {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .loading-title {
+      color: #004b87;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    /* Efeito de pulse no texto de carregamento */
+    .pulse {
+      animation: textPulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes textPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="loading-card">
+    <!-- Logotipo RESCID com imagem real -->
+    <div class="brand-group">
+      <img src="logo.png" class="logo-img-real" alt="Logo RESCID">
+      <div class="brand-meta">
+        <h2>RESCID</h2>
+        <p>PLATAFORMA DE AÇÕES SOCIAIS</p>
+      </div>
+    </div>
+
+    <!-- Spinner Elegante de Duas Camadas -->
+    <div class="spinner-container">
+      <div class="double-spinner"></div>
+      <div class="inner-spinner"></div>
+    </div>
+
+    <!-- Mensagem de Feedback -->
+    <div class="loading-text">
+      <p class="loading-title pulse">Iniciando Sessão</p>
+    </div>
+  </div>
+
+  <script>
+    // Simula um carregamento rápido de 2 segundos antes de enviar para o admin
+    window.onload = function() {
+      setTimeout(function() {
+        // Redireciona para o admin.html que está na mesma pasta pages/
+        window.location.href = "admin.html";
+      }, 2000); // 2000 milissegundos = 2 segundos
+    };
+  </script>
+</body>
+</html>

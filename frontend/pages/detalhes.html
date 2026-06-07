@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalhes da Ação - RESCID</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Sora', sans-serif; background-color: #dbe2e9; padding: 16px; }
+    .app-container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+    /* HEADER */
+    .main-header {
+      background: #f0f4f8; 
+      border-radius: 24px;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+    .brand-link { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .logo-img-real { width: 44px; height: 44px; object-fit: contain; border-radius: 50%; }
+    .brand-meta h2 { font-size: 16px; font-weight: 700; color: #004b87; }
+    .brand-meta p { font-size: 9px; font-weight: 600; color: #0ea5e9; letter-spacing: 0.5px; }
+
+    /* CONTEÚDO */
+    .content-box { background: white; padding: 40px; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+    .btn-back { display: inline-block; margin-bottom: 20px; color: #004b87; font-weight: 600; text-decoration: none; font-size: 14px; }
+    .hero-img { width: 100%; height: 300px; object-fit: cover; border-radius: 16px; margin-bottom: 24px; }
+    h1 { color: #004b87; margin-bottom: 16px; }
+    .categoria { display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; margin-bottom: 16px; }
+    .info-box { margin-bottom: 20px; color: #627d98; line-height: 1.6; }
+    .pix-box { background: #f0f4f8; padding: 20px; border-radius: 16px; margin-top: 30px; display: flex; align-items: center; justify-content: space-between; }
+    .pix-key { font-weight: 700; color: #004b87; }
+    .btn-copy { background: #0ea5e9; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header class="main-header">
+      <a href="index.html" class="brand-link">
+        <img src="logo.png" class="logo-img-real" alt="Logo RESCID">
+        <div class="brand-meta">
+          <h2>RESCID</h2>
+          <p>PLATAFORMA DE AÇÕES SOCIAIS</p>
+        </div>
+      </a>
+    </header>
+
+    <main class="content-box" id="detalhesContainer">
+      </main>
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  const acoes = JSON.parse(localStorage.getItem('rescid_acoes')) || [];
+  const acao = acoes.find(a => a.id == id);
+
+  const container = document.getElementById('detalhesContainer');
+
+  if (acao) {
+    container.innerHTML = `
+      <a href="index.html" class="btn-back">← Voltar para ações</a>
+      <img src="${acao.imagem}" class="hero-img" alt="${acao.titulo}">
+      <span class="categoria">${acao.categoria}</span>
+      <h1>${acao.titulo}</h1>
+      <p class="info-box">${acao.descricao}</p>
+      <div class="info-box">
+        <p><strong>📅 Data:</strong> ${acao.data}</p>
+        <p><strong>⏰ Horário:</strong> ${acao.horario}</p>
+        <p><strong>📍 Endereço:</strong> ${acao.rua}, ${acao.numero} - ${acao.bairro}, ${acao.cidade}/${acao.estado} ${acao.complemento ? '(' + acao.complemento + ')' : ''}</p>
+      </div>
+      <div class="pix-box">
+        <div>
+          <p><strong>Chave PIX (E-mail):</strong></p>
+          <span class="pix-key" id="pixKey">${acao.pix}</span>
+        </div>
+        <button class="btn-copy" onclick="copiarPix()">Copiar Chave</button>
+      </div>
+    `;
+  } else {
+    container.innerHTML = "<h1>Ação não encontrada</h1><a href='index.html'>Voltar para home</a>";
+  }
+
+  function copiarPix() {
+    const pix = document.getElementById('pixKey').innerText;
+    navigator.clipboard.writeText(pix).then(() => {
+        alert('Chave PIX copiada com sucesso!');
+    });
+  }
+</script>
+</body>
+</html>
