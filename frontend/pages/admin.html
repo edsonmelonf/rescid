@@ -6,6 +6,10 @@
   <title>RESCID — Painel Administrativo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/suppliers.js"></script>
   <style>
     /* RESET E CONFIGURAÇÕES DE LAYOUT */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -593,11 +597,35 @@
           </div>
         </div>
 
-        <div class="form-row-endereco">
-          <div class="field">
-            <label>Rua / Logradouro</label>
-            <input type="text" id="fRua" placeholder="Ex: Av. Central" required />
-          </div>
+        <!-- Campo CEP com botão de busca -->
+  <div class="field">
+    <label>CEP</label>
+    <div style="display:flex; gap:8px;">
+      <input 
+        type="text" 
+        id="fCep" 
+        placeholder="Ex: 57000-000" 
+        maxlength="9"
+        oninput="mascaraCep(this)"
+        style="flex:1;"
+      />
+      <button 
+        type="button" 
+        onclick="buscarCep()" 
+        style="padding:14px 18px; border-radius:12px; border:none; background:#0ea5e9; color:white; font-family:inherit; font-weight:700; cursor:pointer; white-space:nowrap;"
+        id="btnBuscarCep"
+      >
+        Buscar
+      </button>
+    </div>
+    <span id="cepStatus" style="font-size:11px; color:#627d98; margin-top:2px;"></span>
+  </div>
+
+  <div class="form-row-endereco">
+    <div class="field">
+      <label>Rua / Logradouro</label>
+      <input type="text" id="fRua" placeholder="Preenchido pelo CEP" required />
+    </div>
           <div class="field">
             <label>Bairro</label>
             <input type="text" id="fBairro" placeholder="Ex: Centro" required />
@@ -714,304 +742,425 @@
   </div>
 
   <script>
-    // ARRAYS LOCAIS SIMULADOS
-    let acoes = [
-      { id: 1, titulo: 'Campanha de Arrecadação', desc: 'Ajude famílias em situação de vulnerabilidade.', data: '2026-06-09', horario: '14:00', categoria: 'Arrecadação', enderecoCompleto: 'Av. Central, 123, Centro, Maceió - AL', chavePix: 'financeiro@rescid.org', imagem: 'https://images.unsplash.com/photo-1544027993-37dbfe43562a?w=500' },
-      { id: 2, titulo: 'Mutirão de Voluntários', desc: 'Participe da limpeza e revitalização do parque municipal.', data: '2026-06-15', horario: '08:00', categoria: 'Voluntariado', enderecoCompleto: 'Parque Municipal, S/N, Farol, Maceió - AL', chavePix: 'voluntarios@rescid.org', imagem: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=500' }
-    ];
+  // ── ESTADO GLOBAL ──────────────────────────────────────
+  let acoes = [];
+  let parceiros = [];
+  let imagemBase64Carregada = '';
+  let buscaTermo = '';
+  let categoriaSelecionada = 'Todos';
+  let acaoAposFecharSucesso = null;
 
-    let parceiros = [
-      { id: 1, nome: 'Mercado Central Ltda.', categoria: 'Alimentação', site: 'www.mercadocentral.com', contato: '(82) 98888-1111', email: 'vendas@mercadocentral.com', descricao: 'Fornece cestas básicas mensais para campanhas de arrecadação.' }
-    ];
+  // ── INICIALIZAÇÃO ──────────────────────────────────────
+  window.onload = async function () {
+    // Carrega dados do usuário logado na sidebar
+    const userRaw = localStorage.getItem('user');
+    if (userRaw) {
+      const user = JSON.parse(userRaw);
+      const nome = user.user_metadata?.nameFull || user.email || 'Admin';
+      document.getElementById('sidebarNome').innerText = nome;
+      document.getElementById('avatarIcon').innerText = nome.charAt(0).toUpperCase();
+      document.getElementById('perfilNome').value = nome;
+      document.getElementById('perfilEmail').value = user.email || '';
+    }
 
-    let imagemBase64Carregada = "";
-    let buscaTermo = "";
-    let categoriaSelecionada = "Todos";
-    let acaoAposFecharSucesso = null;
+    await carregarAcoes();
+    await carregarPatrocinadores();
+  };
 
-    // INICIALIZAÇÃO DO SISTEMA
-    window.onload = function() {
+  // ── AÇÕES ──────────────────────────────────────────────
+  async function carregarAcoes() {
+    const grid = document.getElementById('containerCampanhas');
+    grid.innerHTML = `<p style="color:#627d98; grid-column:1/-1; padding:24px 0;">Carregando campanhas...</p>`;
+    try {
+      acoes = await buscarAcoesAdmin();
       renderizarCampanhas();
-      renderizarPatrocinadores();
+    } catch (error) {
+      grid.innerHTML = `<p style="color:#e53e3e; grid-column:1/-1; padding:24px 0;">Erro ao carregar campanhas.</p>`;
+    }
+  }
+
+  function renderizarCampanhas() {
+    const grid = document.getElementById('containerCampanhas');
+    grid.innerHTML = '';
+
+    const filtradas = acoes.filter(ac => {
+      const bateBusca =
+        ac.titulo.toLowerCase().includes(buscaTermo.toLowerCase()) ||
+        (ac.descricao || '').toLowerCase().includes(buscaTermo.toLowerCase());
+      const bateCat =
+        categoriaSelecionada === 'Todos' ||
+        ac.categoria === categoriaSelecionada;
+      return bateBusca && bateCat;
+    });
+
+    if (filtradas.length === 0) {
+      grid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:#627d98; font-size:13px; padding:40px 0;">Nenhuma campanha encontrada.</p>`;
+      return;
+    }
+
+    filtradas.forEach(ac => {
+      // Monta endereço a partir dos campos separados do banco
+      const endereco = [ac.rua, ac.numero, ac.bairro, `${ac.cidade}/${ac.estado}`]
+        .filter(Boolean).join(', ');
+
+      const card = document.createElement('div');
+      card.className = 'campanha-card';
+      card.innerHTML = `
+        <img src="${ac.imagem || 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=500'}" class="campanha-banner" alt="Banner">
+        <div class="campanha-body">
+          <span style="font-size:11px; font-weight:700; color:#0ea5e9; text-transform:uppercase;">${ac.categoria || ''}</span>
+          <h3 class="campanha-titulo">${ac.titulo}</h3>
+          <p class="campanha-desc">${ac.descricao || ''}</p>
+          <div class="campanha-meta">
+            <div class="meta-row">📅 <span>${ac.data_acao || 'Data não informada'}</span></div>
+            <div class="meta-row">📍 <span>${endereco || 'Endereço não informado'}</span></div>
+            <div class="meta-row">🔑 PIX: <span>${ac.pix_email || 'Não informado'}</span></div>
+          </div>
+          <button class="btn-danger-action" onclick="confirmarDeletarAcao(${ac.id})">Remover Campanha</button>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  async function salvarAcaoDoForm() {
+  const btn = document.getElementById('btnSalvarAcao');
+  btn.disabled = true;
+  btn.textContent = 'Salvando...';
+
+  try {
+    let imagemUrl = null;
+
+    // Se o usuário selecionou uma imagem, faz o upload primeiro
+    const arquivoInput = document.getElementById('fArquivoImagem');
+    if (arquivoInput.files && arquivoInput.files[0]) {
+      document.getElementById('fileLabel').innerText = '⏳ Enviando imagem...';
+      imagemUrl = await uploadImagem(arquivoInput.files[0]);
+      document.getElementById('fileLabel').innerText = '✅ Imagem enviada!';
+    }
+
+    // Monta os dados da ação com a URL da imagem já obtida
+    const dados = {
+      titulo:      document.getElementById('fTitulo').value.trim(),
+      descricao:   document.getElementById('fDesc').value.trim(),
+      data_acao:   document.getElementById('fData').value,
+      categoria:   document.getElementById('fCategoria').value,
+      rua:         document.getElementById('fRua').value.trim(),
+      bairro:      document.getElementById('fBairro').value.trim(),
+      numero:      document.getElementById('fNumero').value.trim(),
+      complemento: document.getElementById('fComplemento').value.trim(),
+      cidade:      document.getElementById('fCidade').value.trim(),
+      estado:      document.getElementById('fEstado').value.trim(),
+      pixEmail:    document.getElementById('fChavePix').value.trim(),
+      imagemUrl:   imagemUrl, // URL real do Supabase Storage
     };
 
-    // ALTERNÂNCIA DE ABAS
-    function switchTab(tabId) {
-      document.querySelectorAll('.admin-section').forEach(sec => sec.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-      
-      const targetSec = document.getElementById(`sec-${tabId}`);
-      const targetNav = document.getElementById(`nav-${tabId}`);
-      
-      if(targetSec) targetSec.classList.add('active');
-      if(targetNav) targetNav.classList.add('active');
+    await criarAcao(dados);
+
+    // Limpa o formulário
+    document.getElementById('formCadastroAcao').reset();
+    document.getElementById('fileLabel').innerText = '📁 Clique para selecionar uma imagem';
+    imagemBase64Carregada = '';
+
+    exibirNotificacaoSucesso('Sucesso!', 'Nova campanha cadastrada com sucesso.', async function () {
+      await carregarAcoes();
+      switchTab('acoes');
+    });
+
+  } catch (error) {
+    alert('Erro ao salvar ação: ' + error.message);
+    document.getElementById('fileLabel').innerText = '📁 Clique para selecionar uma imagem';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Publicar Ação';
+  }
+}
+
+  // Guarda o ID antes de abrir o modal de confirmação
+  let idAcaoParaDeletar = null;
+
+  function confirmarDeletarAcao(id) {
+    idAcaoParaDeletar = id;
+    abrirModal('modalDeletarAcao');
+  }
+
+  async function executarDeletarAcao() {
+    fecharModal('modalDeletarAcao');
+    try {
+      await deletarAcao(idAcaoParaDeletar);
+      await carregarAcoes();
+    } catch (error) {
+      alert('Erro ao remover campanha: ' + error.message);
     }
+  }
 
-    // INTERAÇÃO DA SIDEBAR
-    function toggleSidebarLayout() {
-      const sb = document.getElementById('appSidebar');
-      sb.classList.toggle('collapsed');
-      const btn = sb.querySelector('.collapse-btn');
-      btn.innerText = sb.classList.contains('collapsed') ? "▶" : "◀";
-    }
+  function filtrarCampanhas(termo) {
+    buscaTermo = termo;
+    renderizarCampanhas();
+  }
 
-    // GERENCIAMENTO DE MODAIS CUSTOMIZADOS
-    function abrirModal(id) {
-      document.getElementById(id).classList.add('active');
-    }
+  function filtrarCategoria(cat) {
+    categoriaSelecionada = cat;
+    renderizarCampanhas();
+  }
 
-    function fecharModal(id) {
-      document.getElementById(id).classList.remove('active');
-    }
-
-    function exibirModalDeletar() {
-      abrirModal('modalDeletarConta');
-    }
-
-    function exibirModalSair() {
-      abrirModal('modalSairSistema');
-    }
-
-    function exibirNotificacaoSucesso(titulo, mensagem, callback) {
-      document.getElementById('sucessoTitulo').innerText = titulo;
-      document.getElementById('sucessoMensagem').innerText = mensagem;
-      acaoAposFecharSucesso = callback;
-      abrirModal('modalSucessoGeral');
-    }
-
-    function fecharModalSucessoRedirecionar() {
-      fecharModal('modalSucessoGeral');
-      if (acaoAposFecharSucesso) {
-        acaoAposFecharSucesso();
-        acaoAposFecharSucesso = null;
-      }
-    }
-
-    // OPERAÇÕES LÓGICAS DE CONTA E LOGOUT
-    function executarDeletarConta() {
-      fecharModal('modalDeletarConta');
-      document.getElementById('perfilNome').value = "";
-      document.getElementById('perfilEmail').value = "";
-      document.getElementById('sidebarNome').innerText = "Excluído";
-      
-      exibirNotificacaoSucesso(
-        "Conta Removida", 
-        "Sua conta foi permanentemente apagada do sistema administrativo. Redirecionando...", 
-        function() {
-          window.location.reload();
-        }
-      );
-    }
-
-    function executarSair() {
-      fecharModal('modalSairSistema');
-      exibirNotificacaoSucesso(
-        "Sessão Encerrada",
-        "Você saiu com segurança do painel administrativo.",
-        function() {
-          window.location.href = "index.html";
-        }
-      );
-    }
-
-    function salvarAlteracoesPerfil() {
-      const nomeModificado = document.getElementById('perfilNome').value.trim();
-      const emailModificado = document.getElementById('perfilEmail').value.trim();
-
-      if(!nomeModificado || !emailModificado) return; 
-
-      document.getElementById('sidebarNome').innerText = nomeModificado;
-      document.getElementById('avatarIcon').innerText = nomeModificado.charAt(0).toUpperCase();
-      
-      exibirNotificacaoSucesso(
-        "Perfil Updated", 
-        "Suas novas credenciais de acesso foram salvas de forma nativa no sistema."
-      );
-    }
-
-    // GERENCIAMENTO DO INPUT FILE (BASE64)
-    function atualizarLabelArquivo(input) {
-      const label = document.getElementById('fileLabel');
-      if (input.files && input.files[0]) {
-        label.innerText = `✔️ Imagem: ${input.files[0].name}`;
-        const reader = new FileReader();
-        reader.onload = function(e) { 
-          imagemBase64Carregada = e.target.result; 
-        };
-        reader.readAsDataURL(input.files[0]);
-      } else {
-        label.innerText = "📁 Clique para selecionar uma imagem";
-        imagemBase64Carregada = "";
-      }
-    }
-
-    // CRUD: CAMPANHAS / AÇÕES
-    function renderizarCampanhas() {
-      const grid = document.getElementById('containerCampanhas');
-      grid.innerHTML = "";
-
-      const filtradas = acoes.filter(ac => {
-        const bateBusca = ac.titulo.toLowerCase().includes(buscaTermo.toLowerCase()) || ac.desc.toLowerCase().includes(buscaTermo.toLowerCase());
-        const bateCat = (categoriaSelecionada === "Todos") || (ac.categoria === categoriaSelecionada);
-        return bateBusca && bateCat;
-      });
-
-      if(filtradas.length === 0) {
-        grid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color:#627d98; font-size:13px; padding:40px 0;">Nenhuma campanha localizada para os filtros inseridos.</p>`;
-        return;
-      }
-
-      filtradas.forEach(ac => {
-        const card = document.createElement('div');
-        card.className = 'campanha-card';
-        card.innerHTML = `
-          <img src="${ac.imagem || 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=500'}" class="campanha-banner" alt="Banner">
-          <div class="campanha-body">
-            <span style="font-size:11px; font-weight:700; color:#0ea5e9; text-transform:uppercase;">${ac.categoria}</span>
-            <h3 class="campanha-titulo">${ac.titulo}</h3>
-            <p class="campanha-desc">${ac.desc}</p>
-            <div class="campanha-meta">
-              <div class="meta-row">📅 <span>${ac.data} às ${ac.horario}</span></div>
-              <div class="meta-row">📍 <span>${ac.enderecoCompleto}</span></div>
-              <div class="meta-row">🔑 PIX: <span>${ac.chavePix}</span></div>
-            </div>
-            <button class="btn-danger-action" onclick="deletarAcao(${ac.id})">Remover Campanha</button>
-          </div>
-        `;
-        grid.appendChild(card);
-      });
-    }
-
-    function salvarAcaoDoForm() {
-      const titulo = document.getElementById('fTitulo').value.trim();
-      const desc = document.getElementById('fDesc').value.trim();
-      const data = document.getElementById('fData').value;
-      const horario = document.getElementById('fHorario').value;
-      const categoria = document.getElementById('fCategoria').value;
-      const rua = document.getElementById('fRua').value.trim();
-      const bairro = document.getElementById('fBairro').value.trim();
-      const numero = document.getElementById('fNumero').value.trim();
-      const comp = document.getElementById('fComplemento').value.trim();
-      const cidade = document.getElementById('fCidade').value.trim();
-      const estado = document.getElementById('fEstado').value.trim();
-      const pix = document.getElementById('fChavePix').value.trim();
-
-      const enderecoCompleto = `${rua}, ${numero} ${comp ? '- ' + comp : ''}, ${bairro}, ${cidade} - ${estado}`;
-
-      const novaAcao = {
-        id: Date.now(),
-        titulo: titulo,
-        desc: desc,
-        data: data,
-        horario: horario,
-        categoria: categoria,
-        enderecoCompleto: enderecoCompleto,
-        chavePix: pix,
-        imagem: imagemBase64Carregada
-      };
-
-      acoes.unshift(novaAcao);
-      
-      // Reset do formulário e estado
-      document.getElementById('formCadastroAcao').reset();
-      document.getElementById('fileLabel').innerText = "📁 Clique para selecionar uma imagem";
-      imagemBase64Carregada = "";
-
-      exibirNotificacaoSucesso("Sucesso!", "Nova campanha cadastrada com sucesso.", function() {
-        renderizarCampanhas();
-        switchTab('acoes');
-      });
-    }
-
-    function deletarAcao(id) {
-      acoes = acoes.filter(ac => ac.id !== id);
-      renderizarCampanhas();
-    }
-
-    function filtrarCampanhas(termo) {
-      buscaTermo = termo;
-      renderizarCampanhas();
-    }
-
-    function filtrarCategoria(cat) {
-      categoriaSelecionada = cat;
-      renderizarCampanhas();
-    }
-
-    // CRUD: PATROCINADORES / PARCEIROS
-    function renderizarPatrocinadores() {
-      const container = document.getElementById('containerPatrocinadores');
-      container.innerHTML = "";
-
-      if(parceiros.length === 0) {
-        container.innerHTML = `<p style="text-align:center; color:#627d98; font-size:13px; padding:20px 0;">Nenhum parceiro cadastrado.</p>`;
-        return;
-      }
-
-      parceiros.forEach(p => {
-        const card = document.createElement('div');
-        card.className = 'p-row-card';
-        card.innerHTML = `
-          <div class="p-row-header">
-            <div class="p-meta">
-              <h3>${p.nome}</h3>
-              <p>🌐 ${p.site}</p>
-            </div>
-            <span class="p-badge-cat">${p.categoria}</span>
-          </div>
-          <div class="p-info-body">
-            <div class="p-info-line">📞 <span>${p.contato}</span></div>
-            <div class="p-info-line">✉️ <span>${p.email}</span></div>
-            <div class="p-desc-box">${p.descricao}</div>
-          </div>
-          <button class="btn-danger-action" style="padding: 8px; margin-top: 5px;" onclick="deletarPatrocinador(${p.id})">Remover Parceiro</button>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function cadastrarPatrocinador() {
-      const nome = document.getElementById('pNomeEmpresa').value.trim();
-      const cat = document.getElementById('pCategoria').value.trim();
-      const site = document.getElementById('pSite').value.trim();
-      const contato = document.getElementById('pContato').value.trim();
-      const email = document.getElementById('pEmail').value.trim();
-      const desc = document.getElementById('pDescricao').value.trim();
-
-      if(!nome || !cat || !site || !contato || !email) {
-        alert("Por favor, preencha todos os campos obrigatórios do parceiro.");
-        return;
-      }
-
-      const novoParceiro = {
-        id: Date.now(),
-        nome: nome,
-        categoria: cat,
-        site: site,
-        contato: contato,
-        email: email,
-        descricao: desc || "Sem descrição informada."
-      };
-
-      parceiros.unshift(novoParceiro);
-
-      // Limpa os campos do formulário de patrocinadores manualmente
-      document.getElementById('pNomeEmpresa').value = "";
-      document.getElementById('pCategoria').value = "";
-      document.getElementById('pSite').value = "";
-      document.getElementById('pContato').value = "";
-      document.getElementById('pEmail').value = "";
-      document.getElementById('pDescricao').value = "";
-
-      exibirNotificacaoSucesso("Parceiro Registrado", "O novo patrocinador foi adicionado à listagem.", function() {
-        renderizarPatrocinadores();
-      });
-    }
-
-    function deletarPatrocinador(id) {
-      parceiros = parceiros.filter(p => p.id !== id);
+  // ── PATROCINADORES ─────────────────────────────────────
+  async function carregarPatrocinadores() {
+    const container = document.getElementById('containerPatrocinadores');
+    container.innerHTML = `<p style="color:#627d98; padding:24px 0;">Carregando parceiros...</p>`;
+    try {
+      parceiros = await buscarPatrocinadores();
       renderizarPatrocinadores();
+    } catch (error) {
+      container.innerHTML = `<p style="color:#e53e3e; padding:24px 0;">Erro ao carregar parceiros.</p>`;
     }
-  </script>
+  }
+
+  function renderizarPatrocinadores() {
+    const container = document.getElementById('containerPatrocinadores');
+    container.innerHTML = '';
+
+    if (parceiros.length === 0) {
+      container.innerHTML = `<p style="text-align:center; color:#627d98; font-size:13px; padding:20px 0;">Nenhum parceiro cadastrado.</p>`;
+      return;
+    }
+
+    parceiros.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'p-row-card';
+      card.innerHTML = `
+        <div class="p-row-header">
+          <div class="p-meta">
+            <h3>${p.nome}</h3>
+            <p>🌐 ${p.site || 'Sem site'}</p>
+          </div>
+          <span class="p-badge-cat">${p.categoria || ''}</span>
+        </div>
+        <div class="p-info-body">
+          <div class="p-info-line">📞 <span>${p.telefone || 'Sem telefone'}</span></div>
+          <div class="p-info-line">✉️ <span>${p.email || 'Sem email'}</span></div>
+          <div class="p-desc-box">${p.descricao || 'Sem descrição.'}</div>
+        </div>
+        <button class="btn-danger-action" style="padding:8px; margin-top:5px;" onclick="confirmarDeletarPatrocinador(${p.id})">Remover Parceiro</button>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  async function cadastrarPatrocinador() {
+    const dados = {
+      nome:      document.getElementById('pNomeEmpresa').value.trim(),
+      categoria: document.getElementById('pCategoria').value.trim(),
+      site:      document.getElementById('pSite').value.trim(),
+      telefone:  document.getElementById('pContato').value.trim(),
+      email:     document.getElementById('pEmail').value.trim(),
+      descricao: document.getElementById('pDescricao').value.trim(),
+    };
+
+    if (!dados.nome || !dados.categoria || !dados.email) {
+      alert('Preencha pelo menos nome, categoria e e-mail.');
+      return;
+    }
+
+    try {
+      await criarPatrocinador(dados);
+
+      // Limpa o formulário
+      ['pNomeEmpresa','pCategoria','pSite','pContato','pEmail','pDescricao']
+        .forEach(id => document.getElementById(id).value = '');
+
+      exibirNotificacaoSucesso('Parceiro Registrado', 'O novo patrocinador foi adicionado.', async function () {
+        await carregarPatrocinadores();
+      });
+    } catch (error) {
+      alert('Erro ao cadastrar parceiro: ' + error.message);
+    }
+  }
+
+  let idPatrocinadorParaDeletar = null;
+
+  function confirmarDeletarPatrocinador(id) {
+    idPatrocinadorParaDeletar = id;
+    abrirModal('modalDeletarPatrocinador');
+  }
+
+  async function executarDeletarPatrocinador() {
+    fecharModal('modalDeletarPatrocinador');
+    try {
+      await deletarPatrocinador(idPatrocinadorParaDeletar);
+      await carregarPatrocinadores();
+    } catch (error) {
+      alert('Erro ao remover parceiro: ' + error.message);
+    }
+  }
+
+  // ── LOGOUT ─────────────────────────────────────────────
+  async function executarSair() {
+    fecharModal('modalSairSistema');
+    try {
+      await logout(); // função do auth.js — limpa token e redireciona
+    } catch (error) {
+      window.location.href = 'login.html';
+    }
+  }
+
+  // ── PERFIL ─────────────────────────────────────────────
+  function salvarAlteracoesPerfil() {
+    const nome = document.getElementById('perfilNome').value.trim();
+    if (!nome) return;
+    document.getElementById('sidebarNome').innerText = nome;
+    document.getElementById('avatarIcon').innerText = nome.charAt(0).toUpperCase();
+    exibirNotificacaoSucesso('Perfil Atualizado', 'Suas informações foram salvas.');
+  }
+
+  function executarDeletarConta() {
+    fecharModal('modalDeletarConta');
+    exibirNotificacaoSucesso('Conta Removida', 'Sua conta foi removida. Redirecionando...', function () {
+      logout();
+    });
+  }
+
+  // ── UI: ABAS, SIDEBAR, MODAIS ──────────────────────────
+  function switchTab(tabId) {
+    document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.getElementById(`sec-${tabId}`)?.classList.add('active');
+    document.getElementById(`nav-${tabId}`)?.classList.add('active');
+  }
+
+  function toggleSidebarLayout() {
+    const sb = document.getElementById('appSidebar');
+    sb.classList.toggle('collapsed');
+    sb.querySelector('.collapse-btn').innerText = sb.classList.contains('collapsed') ? '▶' : '◀';
+  }
+
+  function abrirModal(id)  { document.getElementById(id).classList.add('active'); }
+  function fecharModal(id) { document.getElementById(id).classList.remove('active'); }
+
+  function exibirModalDeletar()  { abrirModal('modalDeletarConta'); }
+  function exibirModalSair()     { abrirModal('modalSairSistema'); }
+
+  function exibirNotificacaoSucesso(titulo, mensagem, callback) {
+    document.getElementById('sucessoTitulo').innerText = titulo;
+    document.getElementById('sucessoMensagem').innerText = mensagem;
+    acaoAposFecharSucesso = callback || null;
+    abrirModal('modalSucessoGeral');
+  }
+
+  function fecharModalSucessoRedirecionar() {
+    fecharModal('modalSucessoGeral');
+    if (acaoAposFecharSucesso) {
+      acaoAposFecharSucesso();
+      acaoAposFecharSucesso = null;
+    }
+  }
+
+  function atualizarLabelArquivo(input) {
+    const label = document.getElementById('fileLabel');
+    if (input.files && input.files[0]) {
+      label.innerText = `✔️ Imagem: ${input.files[0].name}`;
+      const reader = new FileReader();
+      reader.onload = e => { imagemBase64Carregada = e.target.result; };
+      reader.readAsDataURL(input.files[0]);
+    } else {
+      label.innerText = '📁 Clique para selecionar uma imagem';
+      imagemBase64Carregada = '';
+    }
+  }
+  // ── CEP ────────────────────────────────────────────────
+
+// Aplica máscara: 00000-000
+function mascaraCep(input) {
+  let valor = input.value.replace(/\D/g, ''); // remove tudo que não é número
+  if (valor.length > 5) valor = valor.slice(0, 5) + '-' + valor.slice(5, 8);
+  input.value = valor;
+
+  // Busca automaticamente quando digitar 8 números
+  if (valor.replace('-', '').length === 8) {
+    buscarCep();
+  }
+}
+
+async function buscarCep() {
+  const cepInput = document.getElementById('fCep');
+  const status = document.getElementById('cepStatus');
+  const btn = document.getElementById('btnBuscarCep');
+
+  // Remove máscara para enviar só números
+  const cep = cepInput.value.replace(/\D/g, '');
+
+  if (cep.length !== 8) {
+    status.textContent = '⚠️ Digite um CEP válido com 8 números.';
+    status.style.color = '#e53e3e';
+    return;
+  }
+
+  // Feedback visual de carregando
+  status.textContent = 'Buscando endereço...';
+  status.style.color = '#627d98';
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+
+  try {
+    // Chama o backend — que por sua vez chama a ViaCEP
+    const dados = await request(`/cep/${cep}`, 'GET', null, true);
+
+    // Preenche os campos automaticamente
+    // ViaCEP retorna: logradouro, bairro, localidade, uf
+    document.getElementById('fRua').value    = dados.logradouro || '';
+    document.getElementById('fBairro').value = dados.bairro     || '';
+    document.getElementById('fCidade').value = dados.localidade || '';
+    document.getElementById('fEstado').value = dados.uf         || '';
+
+    status.textContent = '✅ Endereço preenchido com sucesso!';
+    status.style.color = '#22c55e';
+
+    // Move o foco para o número — próximo campo a preencher manualmente
+    document.getElementById('fNumero').focus();
+
+  } catch (error) {
+    status.textContent = '❌ CEP não encontrado. Preencha o endereço manualmente.';
+    status.style.color = '#e53e3e';
+  } finally {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
+}
+</script>
+<!-- Modal confirmar deletar AÇÃO -->
+<div class="rescid-modal-overlay" id="modalDeletarAcao">
+  <div class="rescid-modal-card">
+    <div class="modal-icon-wrapper danger">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="3 6 5 6 21 6"></polyline>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+      </svg>
+    </div>
+    <h3>Remover Campanha</h3>
+    <p>Tem certeza que deseja remover esta campanha? Essa ação não pode ser desfeita.</p>
+    <div class="modal-actions-grid">
+      <button class="btn-modal-secondary" onclick="fecharModal('modalDeletarAcao')">Cancelar</button>
+      <button class="btn-modal-danger" onclick="executarDeletarAcao()">Remover</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmar deletar PATROCINADOR -->
+<div class="rescid-modal-overlay" id="modalDeletarPatrocinador">
+  <div class="rescid-modal-card">
+    <div class="modal-icon-wrapper danger">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="3 6 5 6 21 6"></polyline>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+      </svg>
+    </div>
+    <h3>Remover Parceiro</h3>
+    <p>Tem certeza que deseja remover este patrocinador?</p>
+    <div class="modal-actions-grid">
+      <button class="btn-modal-secondary" onclick="fecharModal('modalDeletarPatrocinador')">Cancelar</button>
+      <button class="btn-modal-danger" onclick="executarDeletarPatrocinador()">Remover</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

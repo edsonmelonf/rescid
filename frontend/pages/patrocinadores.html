@@ -1,6 +1,3 @@
-
-raw
-Patrocinadores · HTML
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -9,7 +6,9 @@ Patrocinadores · HTML
   <title>RESCID — Patrocinadores</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
+  <script src="js/api.js"></script>
+  <script src="js/suppliers.js"></script>
+ <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Sora', sans-serif; background: #d0d8e4; display: flex; min-height: 100vh; }
  
@@ -178,96 +177,121 @@ Patrocinadores · HTML
   </div>
  
   <script>
-    let patrocinadores = [
-      { id: 1, nome: 'Mercado Central', segmento: 'Alimentação', site: '#', contato: 'mercado@central.com', nivel: 'ouro', emoji: '🏪', descricao: 'Parceiro em doações de alimentos.' },
-      { id: 2, nome: 'Padaria União', segmento: 'Alimentação', site: '#', contato: 'padaria@uniao.com', nivel: 'prata', emoji: '🥖', descricao: 'Doação de pães e alimentos.' },
-      { id: 3, nome: 'Instituto Educar', segmento: 'Educação', site: '#', contato: 'contato@educar.org', nivel: 'bronze', emoji: '📚', descricao: 'Suporte a ações educacionais.' },
-    ];
- 
-    const nivelClass = { ouro: 'nivel-ouro', prata: 'nivel-prata', bronze: 'nivel-bronze' };
-    const nivelLabel = { ouro: '⭐ Ouro', prata: '🥈 Prata', bronze: '🥉 Bronze' };
- 
-    function renderList() {
-      const grid = document.getElementById('sponsorsList');
-      document.getElementById('totalBadge').textContent = `${patrocinadores.length} patrocinador${patrocinadores.length !== 1 ? 'es' : ''}`;
- 
-      if (patrocinadores.length === 0) {
-        grid.innerHTML = '<div class="empty-list">Nenhum patrocinador cadastrado ainda.</div>';
-        return;
-      }
- 
-      grid.innerHTML = patrocinadores.map(p => `
-        <div class="sponsor-card">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div class="sponsor-logo">${p.emoji || p.nome[0]}</div>
-            <div>
-              <div class="sponsor-name">${p.nome}</div>
-              <div class="sponsor-seg">${p.segmento}</div>
-            </div>
-          </div>
-          <span class="nivel-tag ${nivelClass[p.nivel]}">${nivelLabel[p.nivel]}</span>
-          ${p.descricao ? `<div style="font-size:11px;color:#5a7a9a;">${p.descricao}</div>` : ''}
-          ${p.site && p.site !== '#' ? `<a class="sponsor-site" href="${p.site}" target="_blank">🔗 ${p.site}</a>` : ''}
-          <div class="sponsor-actions">
-            <button class="btn-icon btn-edit" onclick="editarPatrocinador(${p.id})" title="Editar">✏️</button>
-            <button class="btn-icon btn-delete" onclick="excluirPatrocinador(${p.id})" title="Excluir">🗑️</button>
+  let patrocinadores = [];
+
+  const nivelClass = { ouro: 'nivel-ouro', prata: 'nivel-prata', bronze: 'nivel-bronze' };
+  const nivelLabel = { ouro: '⭐ Ouro', prata: '🥈 Prata', bronze: '🥉 Bronze' };
+
+  // ── CARREGAR ────────────────────────────────────────────
+  async function carregarPatrocinadores() {
+    const grid = document.getElementById('sponsorsList');
+    grid.innerHTML = '<div class="empty-list">Carregando patrocinadores...</div>';
+
+    try {
+      patrocinadores = await buscarPatrocinadores();
+      renderList();
+    } catch (error) {
+      grid.innerHTML = '<div class="empty-list">Erro ao carregar patrocinadores.</div>';
+    }
+  }
+
+  // ── RENDERIZAR ──────────────────────────────────────────
+  function renderList() {
+    const grid = document.getElementById('sponsorsList');
+    document.getElementById('totalBadge').textContent =
+      `${patrocinadores.length} patrocinador${patrocinadores.length !== 1 ? 'es' : ''}`;
+
+    if (patrocinadores.length === 0) {
+      grid.innerHTML = '<div class="empty-list">Nenhum patrocinador cadastrado ainda.</div>';
+      return;
+    }
+
+    grid.innerHTML = patrocinadores.map(p => `
+      <div class="sponsor-card">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="sponsor-logo">${p.nome ? p.nome[0].toUpperCase() : '?'}</div>
+          <div>
+            <div class="sponsor-name">${p.nome}</div>
+            <div class="sponsor-seg">${p.categoria || 'Sem categoria'}</div>
           </div>
         </div>
-      `).join('');
+        ${p.descricao ? `<div style="font-size:11px; color:#5a7a9a;">${p.descricao}</div>` : ''}
+        ${p.site ? `<a class="sponsor-site" href="${p.site}" target="_blank">🔗 ${p.site}</a>` : ''}
+        <div style="font-size:11px; color:#5a7a9a;">
+          ${p.telefone ? `📞 ${p.telefone}` : ''}
+          ${p.email ? ` · ✉️ ${p.email}` : ''}
+        </div>
+        <div class="sponsor-actions">
+          <button class="btn-icon btn-delete" onclick="excluirPatrocinador(${p.id})" title="Excluir">🗑️</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ── CRIAR ───────────────────────────────────────────────
+  async function salvarPatrocinador() {
+    const dados = {
+      nome:      document.getElementById('fNome').value.trim(),
+      categoria: document.getElementById('fSegmento').value.trim(),
+      site:      document.getElementById('fSite').value.trim(),
+      telefone:  document.getElementById('fContato').value.trim(),
+      email:     '',
+      descricao: document.getElementById('fDescricao').value.trim(),
+    };
+
+    if (!dados.nome || !dados.categoria) {
+      alert('Preencha pelo menos nome e segmento.');
+      return;
     }
- 
-    function salvarPatrocinador() {
-      const nome      = document.getElementById('fNome').value.trim();
-      const segmento  = document.getElementById('fSegmento').value.trim();
-      const site      = document.getElementById('fSite').value.trim();
-      const contato   = document.getElementById('fContato').value.trim();
-      const nivel     = document.getElementById('fNivel').value;
-      const emoji     = document.getElementById('fEmoji').value.trim();
-      const descricao = document.getElementById('fDescricao').value.trim();
- 
-      if (!nome || !segmento) {
-        alert('Preencha pelo menos nome e segmento.');
-        return;
-      }
- 
-      patrocinadores.unshift({ id: Date.now(), nome, segmento, site, contato, nivel, emoji, descricao });
-      ['fNome','fSegmento','fSite','fContato','fEmoji','fDescricao'].forEach(id => document.getElementById(id).value = '');
+
+    const btn = document.querySelector('.btn-save');
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+
+    try {
+      await criarPatrocinador(dados);
+
+      // Limpa os campos
+      ['fNome','fSegmento','fSite','fContato','fEmoji','fDescricao']
+        .forEach(id => document.getElementById(id).value = '');
       document.getElementById('fNivel').value = 'ouro';
- 
+
+      // Mostra mensagem de sucesso
       const msg = document.getElementById('successMsg');
       msg.style.display = 'block';
       setTimeout(() => msg.style.display = 'none', 3000);
- 
-      renderList();
+
+      // Recarrega a lista da API
+      await carregarPatrocinadores();
+
+    } catch (error) {
+      alert('Erro ao cadastrar: ' + error.message);
+    } finally {
+      btn.disabled = false;
+      btn.style.opacity = '1';
     }
- 
-    function excluirPatrocinador(id) {
-      if (!confirm('Excluir este patrocinador?')) return;
-      patrocinadores = patrocinadores.filter(p => p.id !== id);
-      renderList();
+  }
+
+  // ── EXCLUIR ─────────────────────────────────────────────
+  async function excluirPatrocinador(id) {
+    if (!confirm('Excluir este patrocinador?')) return;
+
+    try {
+      await deletarPatrocinador(id);
+      await carregarPatrocinadores();
+    } catch (error) {
+      alert('Erro ao excluir: ' + error.message);
     }
- 
-    function editarPatrocinador(id) {
-      const p = patrocinadores.find(p => p.id === id);
-      if (!p) return;
-      document.getElementById('fNome').value      = p.nome;
-      document.getElementById('fSegmento').value  = p.segmento;
-      document.getElementById('fSite').value      = p.site;
-      document.getElementById('fContato').value   = p.contato;
-      document.getElementById('fNivel').value     = p.nivel;
-      document.getElementById('fEmoji').value     = p.emoji;
-      document.getElementById('fDescricao').value = p.descricao;
-      patrocinadores = patrocinadores.filter(x => x.id !== id);
-      renderList();
-      document.getElementById('fNome').focus();
-    }
- 
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('collapsed');
-      document.getElementById('mainWrapper').classList.toggle('expanded');
-    }
- 
-    renderList();
-  </script>
+  }
+
+  // ── SIDEBAR ─────────────────────────────────────────────
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+    document.getElementById('mainWrapper').classList.toggle('expanded');
+  }
+
+  // Inicia carregando da API
+  window.onload = carregarPatrocinadores;
+</script>
 </body>
 </html>

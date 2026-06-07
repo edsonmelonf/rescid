@@ -8,7 +8,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
   <!-- Font Awesome (Ícones das Redes Sociais) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-  
+  <script src="js/api.js"></script>
+  <script src="js/initiatives.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Sora', sans-serif; background-color: #dbe2e9; padding: 16px; }
@@ -338,57 +339,81 @@
     </footer>
   </div>
 
-  <script>
-    let acoesDisponiveis = [];
+<script>
+  let acoesDisponiveis = [];
 
-    function carregarAcoes(){
-      acoesDisponiveis = JSON.parse(localStorage.getItem('rescid_acoes')) || [];
+  async function carregarAcoes() {
+    const cardsGrid = document.getElementById('cardsGrid');
+
+    // Mostra mensagem enquanto carrega
+    cardsGrid.innerHTML = `
+      <p style="color:#627d98; grid-column:1/-1; padding:24px 0;">
+        Carregando ações...
+      </p>`;
+
+    try {
+      // Busca da API real
+      acoesDisponiveis = await buscarIniciativas();
       renderizarCards(acoesDisponiveis);
-    }
 
-    function renderizarCards(listaAcoes) {
-      const cardsGrid = document.getElementById('cardsGrid');
-      
-      if(listaAcoes.length === 0){
-        cardsGrid.innerHTML = `
-          <p class="no-results" style="color: #627d98; grid-column: 1 / -1; font-size: 16px; padding: 24px 0;">
-            Nenhuma ação encontrada.
-          </p>`;
-        return;
+    } catch (error) {
+      // Se der erro (token expirado, backend fora, etc)
+      cardsGrid.innerHTML = `
+        <p style="color:#e53e3e; grid-column:1/-1; padding:24px 0;">
+          Erro ao carregar ações. Tente novamente.
+        </p>`;
+
+      // Se o erro for de autenticação, manda para o login
+      if (error.message.includes('401') || error.message.includes('token')) {
+        setTimeout(() => window.location.href = 'login.html', 2000);
       }
+    }
+  }
 
-      cardsGrid.innerHTML = listaAcoes.map(acao => `
-        <article class="action-card">
-          <img src="${acao.imagem || 'https://via.placeholder.com/320x190/d0d8e4/004b87?text=Ação+Social'}" alt="${acao.titulo}">
-          <div class="card-content">
-            <h2>${acao.titulo}</h2>
-            <p>${acao.descricao}</p>
-            <div class="card-info">
-              <span>📅 ${acao.data || 'Data não informada'}</span>
-              <span>📍 ${acao.local || 'Local não informado'}</span>
-            </div>
-            <a href="detalhes.html?id=${acao.id}" class="btn-card">Ver detalhes</a>
+  function renderizarCards(listaAcoes) {
+    const cardsGrid = document.getElementById('cardsGrid');
+
+    if (listaAcoes.length === 0) {
+      cardsGrid.innerHTML = `
+        <p style="color:#627d98; grid-column:1/-1; font-size:16px; padding:24px 0;">
+          Nenhuma ação encontrada.
+        </p>`;
+      return;
+    }
+
+    cardsGrid.innerHTML = listaAcoes.map(acao => `
+      <article class="action-card">
+        <img 
+          src="${acao.imagem || 'https://via.placeholder.com/320x190/d0d8e4/004b87?text=Ação+Social'}" 
+          alt="${acao.titulo}"
+        >
+        <div class="card-content">
+          <h2>${acao.titulo}</h2>
+          <p>${acao.descricao || ''}</p>
+          <div class="card-info">
+            <span>📅 ${acao.data_acao || 'Data não informada'}</span>
+            <span>📍 ${acao.cidade || 'Local não informado'}</span>
           </div>
-        </article>
-      `).join('');
-    }
+          <a href="detalhes.html?id=${acao.id}" class="btn-card">Ver detalhes</a>
+        </div>
+      </article>
+    `).join('');
+  }
 
-    function filterCards() {
-      const busca = document.getElementById('searchInput').value.toLowerCase().trim();
-      const categoriaSelecionada = document.getElementById('filterCategoria').value;
+  async function filterCards() {
+    const titulo     = document.getElementById('searchInput').value.trim();
+    const categoria  = document.getElementById('filterCategoria').value;
 
-      const listaFiltrada = acoesDisponiveis.filter(acao => {
-        const correspondeTitulo = acao.titulo.toLowerCase().includes(busca);
-        const correspondeCategoria = !categoriaSelecionada || 
-          (acao.categoria && acao.categoria.toLowerCase() === categoriaSelecionada.toLowerCase());
-
-        return correspondeTitulo && correspondeCategoria;
-      });
-
+    try {
+      // Envia os filtros para a API — o backend já filtra no banco
+      const listaFiltrada = await buscarIniciativas({ titulo, categoria });
       renderizarCards(listaFiltrada);
+    } catch (error) {
+      console.error('Erro ao filtrar:', error.message);
     }
+  }
 
-    window.onload = carregarAcoes;
-  </script>
+  window.onload = carregarAcoes;
+</script>
 </body>
 </html>
