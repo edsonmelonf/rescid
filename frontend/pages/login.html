@@ -253,6 +253,33 @@
       .form-panel { padding: 40px 24px; }
       .brand-header-wrap { margin-bottom: 20px; }
     }
+      /* ── VALIDAÇÃO DE CAMPOS ── */
+
+  /* Borda vermelha quando o campo está inválido */
+  .field-invalid input {
+    border-color: #e53e3e !important;
+    background: rgba(229, 62, 62, 0.04) !important;
+  }
+
+  /* Borda verde quando o campo está válido */
+  .field-valid input {
+    border-color: #22c55e !important;
+    background: rgba(34, 197, 94, 0.04) !important;
+  }
+
+  /* Mensagem de erro embaixo do campo */
+  .field-error-msg {
+    font-size: 11px;
+    color: #e53e3e;
+    margin-top: 3px;
+    display: none; /* fica escondida por padrão */
+    font-weight: 500;
+  }
+
+  /* Quando tem erro, mostra a mensagem */
+  .field-invalid .field-error-msg {
+    display: block;
+  }
   </style>
 </head>
 <body>
@@ -291,14 +318,30 @@
     </div>
  
     <div class="show-signup">
-      <div class="field">
-        <label>Nome completo</label>
-        <input type="text" id="cadNome" placeholder="Seu nome completo" />
-      </div>
-      <div class="field">
-        <label>E-mail</label>
-        <input type="email" id="cadEmail" placeholder="seu@email.com" />
-      </div>
+    <div class="field" id="fieldNome">
+    <label>Nome completo</label>
+    <input 
+      type="text" 
+      id="cadNome" 
+      placeholder="Seu nome completo"
+      oninput="validarNome(this.value)"
+    />
+    <span class="field-error-msg">
+      Use apenas letras e espaços. Números e símbolos não são permitidos.
+    </span>
+    </div>
+      <div class="field" id="fieldEmail">
+    <label>E-mail</label>
+    <input 
+      type="email" 
+      id="cadEmail" 
+      placeholder="seu@email.com"
+      oninput="validarEmail(this.value)"
+    />
+    <span class="field-error-msg">
+      Digite um e-mail válido. Exemplo: nome@email.com
+    </span>
+  </div>
       <div class="field">
         <label>Senha</label>
         <div class="input-wrap">
@@ -398,7 +441,77 @@
       toast.classList.remove('show');
     }, 3000);
   }
+// ── VALIDAÇÕES ─────────────────────────────────────────
 
+// Função auxiliar: aplica ou remove o estado de erro no campo
+// Recebe: id do div pai, e se está válido (true) ou inválido (false)
+function setFieldState(fieldId, isValid) {
+  const field = document.getElementById(fieldId);
+
+  // Remove os dois estados antes de aplicar o correto
+  // (evita ter as duas classes ao mesmo tempo)
+  field.classList.remove('field-valid', 'field-invalid');
+
+  // Aplica a classe correta baseada no resultado
+  if (isValid) {
+    field.classList.add('field-valid');   // borda verde
+  } else {
+    field.classList.add('field-invalid'); // borda vermelha + mostra mensagem
+  }
+}
+
+// ── VALIDAÇÃO DO NOME ───────────────────────────────────
+function validarNome(valor) {
+
+  // Se o campo estiver vazio, remove qualquer estado visual
+  // (não mostramos erro enquanto o usuário ainda não digitou nada)
+  if (valor.length === 0) {
+    const field = document.getElementById('fieldNome');
+    field.classList.remove('field-valid', 'field-invalid');
+    return true; // consideramos vazio como "ainda não validado"
+  }
+
+  // A regex aceita apenas:
+  // - letras sem acento: a-z e A-Z
+  // - letras com acento: À-ÿ (cobre ã, é, ç, ü, etc)
+  // - espaços: \s
+  // O + significa "um ou mais"
+  // ^ e $ significam "do início ao fim da string"
+  const apenasLetras = /^[a-zA-ZÀ-ÿ\s]+$/;
+
+  // .test() retorna true se o valor bate com o padrão, false se não bate
+  const valido = apenasLetras.test(valor);
+
+  // Aplica o estado visual no campo
+  setFieldState('fieldNome', valido);
+
+  return valido; // retorna true ou false para usar no handleSubmit
+}
+
+  // ── VALIDAÇÃO DO EMAIL ──────────────────────────────────
+  function validarEmail(valor) {
+
+    // Se vazio, remove estado visual
+    if (valor.length === 0) {
+      const field = document.getElementById('fieldEmail');
+      field.classList.remove('field-valid', 'field-invalid');
+      return true;
+    }
+
+    // Essa regex valida o formato de email:
+    // [^\s@]+   → um ou mais caracteres que NÃO são espaço ou @  (a parte antes do @)
+    // @         → o símbolo @ obrigatório
+    // [^\s@]+   → um ou mais caracteres (o domínio, ex: gmail)
+    // \.        → um ponto obrigatório
+    // [^\s@]+   → extensão obrigatória (ex: com, org, br)
+    const formatoEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    const valido = formatoEmail.test(valor);
+
+    setFieldState('fieldEmail', valido);
+
+    return valido;
+}
   // Validação e Submit
   async function handleSubmit() {
   const isSignup = document.getElementById('loginCard').classList.contains('signup-mode');
@@ -420,6 +533,19 @@
       btn.style.opacity = '1';
       return;
     }
+    // Roda as validações e guarda os resultados
+    // Se qualquer uma retornar false, nomeValido ou emailValido será false
+    const nomeValido  = validarNome(nome);
+    const emailValido = validarEmail(email);
+
+     // Se alguma validação falhou, mostra o erro e para o envio
+    if (!nomeValido || !emailValido) {
+      showError('Corrija os campos destacados em vermelho.');
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      return;
+    }
+    
     if (senha.length < 8) {
       showError('A senha deve ter pelo menos 8 caracteres.');
       btn.disabled = false;
