@@ -9,8 +9,8 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
     const { categoria, titulo, meus } = req.query;
-    let query = supabase.from('acoes').select('*');
-    if (categoria) query = query.eq('categoria', categoria);
+    let query = supabase.from('acoes').select('*, categorias(nome)');
+    if (categoria) query = query.eq('categoria_id', categoria);
     if (titulo) query = query.ilike('titulo', `%${titulo}%`);
     
     // Se ?meus=true, filtra pelo usuário logado
@@ -27,9 +27,23 @@ router.get('/', async (req, res) => {
     res.status(200).json(data);
 });
 
+router.get('/meus', authenticate, async (req, res) => {
+    const { categoria, titulo } = req.query;
+    let query = supabase.from('acoes').select('*, categorias(nome)');
+    if (categoria) query = query.eq('categoria_id', categoria);
+    if (titulo) query = query.ilike('titulo', `%${titulo}%`);
+    query = query.eq('user_id', req.user.id);
+
+    const { data, error } = await query;
+    if (error) {
+        return res.status(500).json({ message: error.message });
+    }
+    res.status(200).json(data);
+});
+
 router.get('/:id', async (req, res) => {
     const id = Number(req.params.id);
-    const { data, error } = await supabase.from('acoes').select('*').eq('id', id);
+    const { data, error } = await supabase.from('acoes').select('*, categorias(nome)').eq('id', id);
     if (error) {
         return res.status(500).json({ message: error.message });
     }
@@ -48,7 +62,7 @@ router.post('/', authenticate, validate(initiativeSchema), async (req, res) => {
     const { data, error } = await clienteAutenticado.from('acoes').insert({
         titulo: req.body.titulo,
         descricao: req.body.descricao,
-        categoria: req.body.categoria,
+        categoria_id: req.body.categoria_id,
         cidade: req.body.cidade,
         horario: req.body.horario + ':00',
         estado: req.body.estado,

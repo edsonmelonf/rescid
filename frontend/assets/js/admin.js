@@ -1,7 +1,7 @@
 // frontend/assets/js/admin.js
 
 async function buscarAcoesAdmin() {
-  return await request('/initiatives?meus=true', 'GET', null, true);
+  return await request('/initiatives/meus', 'GET', null, true);
 }
 
 async function criarAcao(dados) {

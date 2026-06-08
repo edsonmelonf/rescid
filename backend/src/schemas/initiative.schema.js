@@ -5,7 +5,7 @@ export const initiativeSchema = z.object({
   descricao: z.string().min(20, 'A descrição precisa ter pelo menos 20 caracteres').max(500, 'A descrição pode ter no máximo 500 caracteres'),
   data_acao: z.string().min(1, 'Data é obrigatória'),
   horario: z.string().min(1, 'Horário é obrigatório'),
-  categoria: z.string().min(1, 'Categoria é obrigatória'),
+  categoria_id: z.number({ required_error: 'Categoria é obrigatória' }).int().positive(),
   cep: z.string().min(8, 'CEP é obrigatório'),
   complemento: z.string().optional(),
   numero: z.string().optional(),

@@ -24,8 +24,10 @@ async function request(endpoint, method = 'GET', body = null, auth = false) {
 
     if (!response.ok) {
       // Se vier lista de erros do Zod, junta em uma mensagem só
-      if (data.errors && Array.isArray(data.errors)) {
-        throw new Error(data.errors.join('\n'));
+      if (data.errors && typeof data.errors === 'object') {
+        const err = new Error('Erro de validação');
+        err.fields = data.errors;
+        throw err;
       }
       throw new Error(data.message || 'Erro na requisição');
     }

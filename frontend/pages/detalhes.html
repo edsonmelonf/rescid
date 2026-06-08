@@ -80,7 +80,7 @@
 
     try {
       // Busca os detalhes da iniciativa pelo ID na API
-      const acao = await request(`/initiatives/${id}`, 'GET', null, true);
+      const acao = await request(`/initiatives/${id}`, 'GET', null, false);
 
       // Monta o endereço completo
       const endereco = [
@@ -98,7 +98,7 @@
           class="hero-img" 
           alt="${acao.titulo}"
         >
-        <span class="categoria">${acao.categoria || 'Sem categoria'}</span>
+        <span class="categoria">${acao.categorias?.nome || 'Sem categoria'}</span>
         <h1>${acao.titulo}</h1>
         <p class="info-box">${acao.descricao || ''}</p>
         <div class="info-box">

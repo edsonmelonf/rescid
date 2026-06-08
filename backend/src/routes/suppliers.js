@@ -1,14 +1,17 @@
 import express from 'express';
 import { validate } from '../middlewares/validate.js';
 import { supplierSchema } from '../schemas/supplier.schema.js';
-import { supabase } from '../lib/supabase.js';
+import { supabase, supabaseAuth } from '../lib/supabase.js';
 
 const router = express.Router();
 
 
 
 router.post('/', validate(supplierSchema), async (req, res) => {
-    const { data, error } = await supabase.from('patrocinadores').insert({
+    const token = req.headers.authorization?.split(' ')[1];
+    const client = supabaseAuth(token);
+
+    const { data, error } = await client.from('patrocinadores').insert({
         nome: req.body.nome,
         categoria: req.body.categoria,
         site: req.body.site,
@@ -16,6 +19,7 @@ router.post('/', validate(supplierSchema), async (req, res) => {
         telefone: req.body.telefone,
         email: req.body.email,
     }).select('*');
+
     if (error) {
         return res.status(500).json({ message: error.message });
     }
@@ -32,7 +36,7 @@ router.get('/', async (req, res) => {
         return res.status(500).json({ message: error.message });
     }
     res.status(200).json(data);
-}); 
+});
 
 router.get('/:id', async(req, res) => {
     const id = Number(req.params.id);

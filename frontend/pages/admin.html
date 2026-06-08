@@ -832,7 +832,7 @@ window.onload = async function () {
         (ac.descricao || '').toLowerCase().includes(buscaTermo.toLowerCase());
       const bateCat =
         categoriaSelecionada === 'Todos' ||
-        ac.categoria === categoriaSelecionada;
+        ac.categorias?.nome === categoriaSelecionada;
       return bateBusca && bateCat;
     });
 
@@ -842,7 +842,6 @@ window.onload = async function () {
     }
 
     filtradas.forEach(ac => {
-      // Monta endereço a partir dos campos separados do banco
       const endereco = [ac.rua, ac.numero, ac.bairro, `${ac.cidade}/${ac.estado}`]
         .filter(Boolean).join(', ');
 
@@ -851,7 +850,7 @@ window.onload = async function () {
       card.innerHTML = `
         <img src="${ac.imagem || 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=500'}" class="campanha-banner" alt="Banner">
         <div class="campanha-body">
-          <span style="font-size:11px; font-weight:700; color:#0ea5e9; text-transform:uppercase;">${ac.categoria || ''}</span>
+          <span style="font-size:11px; font-weight:700; color:#0ea5e9; text-transform:uppercase;">${ac.categorias?.nome || ''}</span>
           <h3 class="campanha-titulo">${ac.titulo}</h3>
           <p class="campanha-desc">${ac.descricao || ''}</p>
           <div class="campanha-meta">
@@ -909,20 +908,20 @@ window.onload = async function () {
       document.getElementById('fileLabel').innerText = '✅ Imagem enviada!';
 
       const dados = {
-        titulo:      document.getElementById('fTitulo').value.trim(),
-        descricao:   descricao,
-        data_acao:   document.getElementById('fData').value,
-        horario:     document.getElementById('fHorario').value,
-        cep:         document.getElementById('fCep').value.trim(),
-        categoria:   document.getElementById('fCategoria').value,
-        rua:         document.getElementById('fRua').value.trim(),
-        bairro:      document.getElementById('fBairro').value.trim(),
-        numero:      document.getElementById('fNumero').value.trim(),
-        complemento: document.getElementById('fComplemento').value.trim(),
-        cidade:      document.getElementById('fCidade').value.trim(),
-        estado:      document.getElementById('fEstado').value.trim(),
-        pixEmail:    document.getElementById('fChavePix').value.trim(),
-        imagemUrl:   imagemUrl,
+          titulo:        document.getElementById('fTitulo').value.trim(),
+          descricao:     descricao,
+          data_acao:     document.getElementById('fData').value,
+          horario:       document.getElementById('fHorario').value,
+          cep:           document.getElementById('fCep').value.trim(),
+          categoria_id:  Number(document.getElementById('fCategoria').value), // ← mudou
+          rua:           document.getElementById('fRua').value.trim(),
+          bairro:        document.getElementById('fBairro').value.trim(),
+          numero:        document.getElementById('fNumero').value.trim(),
+          complemento:   document.getElementById('fComplemento').value.trim(),
+          cidade:        document.getElementById('fCidade').value.trim(),
+          estado:        document.getElementById('fEstado').value.trim(),
+          pixEmail:      document.getElementById('fChavePix').value.trim(),
+          imagemUrl:     imagemUrl,
       };
 
       await criarAcao(dados);
@@ -1024,34 +1023,59 @@ window.onload = async function () {
   }
 
   async function cadastrarPatrocinador() {
-    const dados = {
-      nome:      document.getElementById('pNomeEmpresa').value.trim(),
-      categoria: document.getElementById('pCategoria').value.trim(),
-      site:      document.getElementById('pSite').value.trim(),
-      telefone:  document.getElementById('pContato').value.trim(),
-      email:     document.getElementById('pEmail').value.trim(),
-      descricao: document.getElementById('pDescricao').value.trim(),
-    };
+  const dados = {
+    nome:      document.getElementById('pNomeEmpresa').value.trim(),
+    categoria: document.getElementById('pCategoria').value.trim(),
+    site:      document.getElementById('pSite').value.trim(),
+    telefone:  document.getElementById('pContato').value.trim(),
+    email:     document.getElementById('pEmail').value.trim(),
+    descricao: document.getElementById('pDescricao').value.trim(),
+  };
 
-    if (!dados.nome || !dados.categoria || !dados.email) {
-      alert('Preencha pelo menos nome, categoria e e-mail.');
-      return;
-    }
+  // Limpa erros anteriores antes de qualquer coisa
+  const mapa = {
+    nome:      'pNomeEmpresa',
+    categoria: 'pCategoria',
+    site:      'pSite',
+    telefone:  'pContato',
+    email:     'pEmail',
+    descricao: 'pDescricao',
+  };
+  Object.values(mapa).forEach(id => {
+    const campo = document.getElementById(id);
+    const erroAntigo = campo.parentElement.querySelector('.erro-zod');
+    if (erroAntigo) erroAntigo.remove();
+    campo.style.borderColor = '';
+  });
 
-    try {
-      await criarPatrocinador(dados);
+  try {
+    await criarPatrocinador(dados);
 
-      // Limpa o formulário
-      ['pNomeEmpresa','pCategoria','pSite','pContato','pEmail','pDescricao']
-        .forEach(id => document.getElementById(id).value = '');
+    ['pNomeEmpresa','pCategoria','pSite','pContato','pEmail','pDescricao']
+      .forEach(id => document.getElementById(id).value = '');
 
-      exibirNotificacaoSucesso('Parceiro Registrado', 'O novo patrocinador foi adicionado.', async function () {
-        await carregarPatrocinadores();
+    exibirNotificacaoSucesso('Parceiro Registrado', 'O novo patrocinador foi adicionado.', async function () {
+      await carregarPatrocinadores();
+    });
+
+  } catch (error) {
+    if (error.fields) {
+      Object.entries(error.fields).forEach(([campo, mensagem]) => {
+        const inputId = mapa[campo];
+        if (!inputId) return;
+        const input = document.getElementById(inputId);
+        input.style.borderColor = 'red';
+        const span = document.createElement('span');
+        span.className = 'erro-zod';
+        span.style.cssText = 'color:red; font-size:12px; display:block; margin-top:4px;';
+        span.textContent = mensagem;
+        input.parentElement.appendChild(span);
       });
-    } catch (error) {
+    } else {
       alert('Erro ao cadastrar parceiro: ' + error.message);
     }
   }
+}
 
   let idPatrocinadorParaDeletar = null;
 
