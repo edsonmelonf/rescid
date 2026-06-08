@@ -8,10 +8,18 @@ import { createClient } from '@supabase/supabase-js';
 const router = express.Router();
 
 router.get('/', async (req, res) => {
-    const { categoria, titulo } = req.query;
+    const { categoria, titulo, meus } = req.query;
     let query = supabase.from('acoes').select('*');
     if (categoria) query = query.eq('categoria', categoria);
     if (titulo) query = query.ilike('titulo', `%${titulo}%`);
+    
+    // Se ?meus=true, filtra pelo usuário logado
+    if (meus === 'true') {
+        const token = req.headers.authorization?.split(' ')[1];
+        const { data: { user } } = await supabase.auth.getUser(token);
+        if (user) query = query.eq('user_id', user.id);
+    }
+
     const { data, error } = await query;
     if (error) {
         return res.status(500).json({ message: error.message });
@@ -52,6 +60,7 @@ router.post('/', authenticate, validate(initiativeSchema), async (req, res) => {
         pix_email: req.body.pixEmail,
         data_acao: req.body.data_acao,
         cep: req.body.cep,
+        user_id: req.user.id,
     }).select('*');
 
     if (error) {
