@@ -7,6 +7,8 @@ import auth from './routes/auth.js';
 import { authenticate } from './middlewares/authenticate.js';
 import cep from './routes/cep.js';
 import upload from './routes/upload.js';
+import categorias from './routes/categorias.js';
+
 
 const app = express();
 
@@ -25,5 +27,6 @@ app.use('/suppliers', authenticate, suppliers);
 app.use('/auth', auth);
 app.use('/cep', cep);
 app.use('/upload', authenticate, upload);
+app.use('/categorias', categorias);
 
 export default app;
