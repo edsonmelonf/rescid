@@ -1,7 +1,7 @@
-// frontend/js/admin.js
+// frontend/assets/js/admin.js
 
 async function buscarAcoesAdmin() {
-  return await request('/initiatives', 'GET', null, true);
+  return await request('/initiatives?meus=true', 'GET', null, true);
 }
 
 async function criarAcao(dados) {
@@ -12,7 +12,6 @@ async function deletarAcao(id) {
   return await request(`/initiatives/${id}`, 'DELETE', null, true);
 }
 
-// ── NOVA FUNÇÃO ─────────────────────────────────────────
 async function uploadImagem(arquivo) {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -20,14 +19,12 @@ async function uploadImagem(arquivo) {
     return;
   }
 
-  // FormData é o formato correto para enviar arquivos
   const formData = new FormData();
-  formData.append('imagem', arquivo); // 'imagem' é o nome que o backend espera
+  formData.append('imagem', arquivo);
 
   const response = await fetch(`${API_URL}/upload`, {
     method: 'POST',
     headers: {
-      // Não coloca Content-Type aqui — o navegador define sozinho para FormData
       'Authorization': `Bearer ${token}`
     },
     body: formData
@@ -39,5 +36,5 @@ async function uploadImagem(arquivo) {
     throw new Error(data.error || 'Erro ao fazer upload da imagem');
   }
 
-  return data.url; // retorna a URL pública da imagem
+  return data.url;
 }

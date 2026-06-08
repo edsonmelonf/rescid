@@ -574,7 +574,7 @@
         
         <div class="field">
           <label>Descrição Detalhada</label>
-          <textarea id="fDesc" placeholder="Descreva os objetivos fundamentais da ação social..." style="min-height: 80px;" required></textarea>
+          <textarea id="fDesc" placeholder="Descreva os objetivos fundamentais da ação social..." style="min-height: 80px; resize: none;" maxlength="500" oninput="atualizarContador(this)" required></textarea>
         </div>
         
         <div class="form-row-3">
@@ -624,15 +624,15 @@
   <div class="form-row-endereco">
     <div class="field">
       <label>Rua / Logradouro</label>
-      <input type="text" id="fRua" placeholder="Preenchido pelo CEP" required />
+      <input type="text" id="fRua" placeholder="Preenchido pelo CEP" required oninput="this.value = this.value.replace(/[0-9]/g, '')" />
     </div>
           <div class="field">
             <label>Bairro</label>
-            <input type="text" id="fBairro" placeholder="Ex: Centro" required />
+            <input type="text" id="fBairro" placeholder="Ex: Centro" required oninput="this.value = this.value.replace(/[0-9]/g, '')" />
           </div>
           <div class="field">
             <label>Número</label>
-            <input type="text" id="fNumero" placeholder="Ex: 123" required />
+            <input type="text" id="fNumero" placeholder="Ex: 123" required oninput="this.value = this.value.replace(/\D/g, '')" />
           </div>
         </div>
 
@@ -643,11 +643,11 @@
           </div>
           <div class="field">
             <label>Cidade</label>
-            <input type="text" id="fCidade" placeholder="Ex: Maceió" required />
+            <input type="text" id="fCidade" placeholder="Ex: Maceió" required oninput="this.value = this.value.replace(/[0-9]/g, '')" />
           </div>
           <div class="field">
             <label>Estado</label>
-            <input type="text" id="fEstado" placeholder="Ex: AL" maxlength="2" required />
+            <input type="text" id="fEstado" placeholder="Ex: AL" maxlength="2" required oninput="this.value = this.value.replace(/[^a-zA-Z]/g, '').toUpperCase()" />
           </div>
         </div>
 
@@ -660,8 +660,9 @@
           <label>Arquivo de Imagem (Capa do Encarte)</label>
           <label for="fArquivoImagem" class="file-input-wrapper">
             <span class="file-input-label" id="fileLabel">📁 Clique para selecionar uma imagem</span>
-            <input type="file" id="fArquivoImagem"accept=".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif"onchange="atualizarLabelArquivo(this)" 
-         />
+            <input type="file" id="fArquivoImagem" accept=".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif" onchange="atualizarLabelArquivo(this)" />
+          </label>
+          <span id="erroImagem" style="font-size:11px; color:#e53e3e; margin-top:2px; display:none;">⚠️ A imagem é obrigatória para publicar uma ação.</span>
         </div>
 
         <button type="submit" class="btn-blue-action" id="btnSalvarAcao">Publicar Ação</button>
@@ -829,20 +830,45 @@
     btn.textContent = 'Salvando...';
 
     try {
-      let imagemUrl = null;
-
-      // Se o usuário selecionou uma imagem, faz o upload primeiro
-      const arquivoInput = document.getElementById('fArquivoImagem');
-      if (arquivoInput.files && arquivoInput.files[0]) {
-        document.getElementById('fileLabel').innerText = '⏳ Enviando imagem...';
-        imagemUrl = await uploadImagem(arquivoInput.files[0]);
-        document.getElementById('fileLabel').innerText = '✅ Imagem enviada!';
+      // Valida descrição antes de qualquer coisa
+      const descricao = document.getElementById('fDesc').value.trim();
+      if (descricao.length < 20) {
+        let erroBox = document.getElementById('erroFormulario');
+        if (!erroBox) {
+          erroBox = document.createElement('p');
+          erroBox.id = 'erroFormulario';
+          erroBox.style.cssText = 'color:#e53e3e; font-size:12px; font-weight:600; white-space:pre-line; text-align:center; margin-top:8px;';
+          document.getElementById('btnSalvarAcao').before(erroBox);
+        }
+        erroBox.textContent = '⚠️ A descrição precisa ter pelo menos 20 caracteres.';
+        btn.disabled = false;
+        btn.textContent = 'Publicar Ação';
+        return;
       }
 
-      // Monta os dados da ação com a URL da imagem já obtida
+      // Valida imagem obrigatória
+      const arquivoInput = document.getElementById('fArquivoImagem');
+      if (!arquivoInput.files || !arquivoInput.files[0]) {
+        document.getElementById('erroImagem').style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Publicar Ação';
+        return;
+      }
+
+      // Esconde erros se tudo ok
+      document.getElementById('erroImagem').style.display = 'none';
+      const erroBox = document.getElementById('erroFormulario');
+      if (erroBox) erroBox.textContent = '';
+
+      let imagemUrl = null;
+
+      document.getElementById('fileLabel').innerText = '⏳ Enviando imagem...';
+      imagemUrl = await uploadImagem(arquivoInput.files[0]);
+      document.getElementById('fileLabel').innerText = '✅ Imagem enviada!';
+
       const dados = {
         titulo:      document.getElementById('fTitulo').value.trim(),
-        descricao:   document.getElementById('fDesc').value.trim(),
+        descricao:   descricao,
         data_acao:   document.getElementById('fData').value,
         horario:     document.getElementById('fHorario').value,
         cep:         document.getElementById('fCep').value.trim(),
@@ -855,10 +881,10 @@
         estado:      document.getElementById('fEstado').value.trim(),
         pixEmail:    document.getElementById('fChavePix').value.trim(),
         imagemUrl:   imagemUrl,
-    };
+      };
+
       await criarAcao(dados);
-      
-      // Limpa o formulário
+
       document.getElementById('formCadastroAcao').reset();
       document.getElementById('fileLabel').innerText = '📁 Clique para selecionar uma imagem';
       imagemBase64Carregada = '';
@@ -869,7 +895,14 @@
       });
 
     } catch (error) {
-      alert('Erro ao salvar ação: ' + error.message);
+      let erroBox = document.getElementById('erroFormulario');
+      if (!erroBox) {
+        erroBox = document.createElement('p');
+        erroBox.id = 'erroFormulario';
+        erroBox.style.cssText = 'color:#e53e3e; font-size:12px; font-weight:600; white-space:pre-line; text-align:center; margin-top:8px;';
+        document.getElementById('btnSalvarAcao').before(erroBox);
+      }
+      erroBox.textContent = '⚠️ ' + error.message;
       document.getElementById('fileLabel').innerText = '📁 Clique para selecionar uma imagem';
     } finally {
       btn.disabled = false;

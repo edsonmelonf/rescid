@@ -1,13 +1,8 @@
-// frontend/assets/js/api.js
-
-// URL base do backend
-// Durante desenvolvimento, o backend roda local
 const API_URL = 'http://localhost:3000';
 
 async function request(endpoint, method = 'GET', body = null, auth = false) {
   const headers = { 'Content-Type': 'application/json' };
 
-  // Se a rota precisa de token, busca o que foi salvo no login
   if (auth) {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -23,12 +18,15 @@ async function request(endpoint, method = 'GET', body = null, auth = false) {
   try {
     const response = await fetch(`${API_URL}${endpoint}`, options);
 
-    // Se a resposta não tem body (ex: DELETE retorna 204), retorna null
     if (response.status === 204) return null;
 
     const data = await response.json();
 
     if (!response.ok) {
+      // Se vier lista de erros do Zod, junta em uma mensagem só
+      if (data.errors && Array.isArray(data.errors)) {
+        throw new Error(data.errors.join('\n'));
+      }
       throw new Error(data.message || 'Erro na requisição');
     }
 
