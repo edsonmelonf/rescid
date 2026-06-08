@@ -530,8 +530,10 @@
           <div class="form-row-cidade">
             <div class="field">
               <label>Categoria</label>
-              <input type="text" id="pCategoria" placeholder="Ex: Alimentação, Tecnologia" />
-            </div>
+              <select id="pCategoria">
+                  <option value="">Selecione...</option>
+              </select>
+          </div>
             <div class="field">
               <label>Site (URL)</label>
               <input type="text" id="pSite" placeholder="Ex: www.empresa.com.br" />
@@ -541,7 +543,7 @@
           <div class="form-row-cidade">
             <div class="field">
               <label>Contato / Telefone</label>
-              <input type="text" id="pContato" placeholder="Ex: (82) 99999-0000" />
+              <input type="text" id="pContato" placeholder="Ex: (82) 99999-0000" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 11)" />
             </div>
             <div class="field">
               <label>E-mail institucional</label>
@@ -752,8 +754,7 @@
   let acaoAposFecharSucesso = null;
 
   // ── INICIALIZAÇÃO ──────────────────────────────────────
-  window.onload = async function () {
-    // Carrega dados do usuário logado na sidebar
+window.onload = async function () {
     const userRaw = localStorage.getItem('user');
     if (userRaw) {
       const user = JSON.parse(userRaw);
@@ -764,9 +765,50 @@
       document.getElementById('perfilEmail').value = user.email || '';
     }
 
+    await carregarCategorias();
     await carregarAcoes();
     await carregarPatrocinadores();
   };
+
+// ── CATEGORIAS ─────────────────────────────────────────
+  async function carregarCategorias() {
+    try {
+      const categorias = await request('/categorias', 'GET', null, false);
+
+      // Preenche o select do formulário de criar ação
+      const selectAcao = document.getElementById('fCategoria');
+      selectAcao.innerHTML = '<option value="">Selecione...</option>';
+      categorias.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.id;
+        option.textContent = cat.nome;
+        selectAcao.appendChild(option);
+      });
+
+      // Preenche o select de filtro da listagem
+      const selectFiltro = document.querySelector('.category-select');
+      selectFiltro.innerHTML = '<option value="Todos">Todas as Categorias</option>';
+      categorias.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.nome;
+        option.textContent = cat.nome;
+        selectFiltro.appendChild(option);
+      });
+
+      // Preenche o select de categoria do patrocinador
+      const selectPatrocinador = document.getElementById('pCategoria');
+      selectPatrocinador.innerHTML = '<option value="">Selecione...</option>';
+      categorias.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.nome;
+        option.textContent = cat.nome;
+        selectPatrocinador.appendChild(option);
+});
+
+    } catch (error) {
+      console.error('Erro ao carregar categorias:', error.message);
+    }
+  }
 
   // ── AÇÕES ──────────────────────────────────────────────
   async function carregarAcoes() {
