@@ -276,10 +276,6 @@
 
         <select class="filter-select" id="filterCategoria" onchange="filterCards()">
           <option value="">Todas as categorias</option>
-          <option value="arrecadacao">🍱 Arrecadação</option>
-          <option value="voluntariado">🌿 Voluntariado</option>
-          <option value="educacao">📚 Educação</option>
-          <option value="saude">🏥 Saúde</option>
         </select>
       </div>
 
@@ -343,6 +339,7 @@
   let acoesDisponiveis = [];
 
   async function carregarAcoes() {
+    await carregarCategorias();
     const cardsGrid = document.getElementById('cardsGrid');
 
     // Mostra mensagem enquanto carrega
@@ -415,6 +412,22 @@
   }
 
   window.onload = carregarAcoes;
+
+  async function carregarCategorias() {
+    try {
+        const categorias = await request('/categorias', 'GET', null, false);
+        const select = document.getElementById('filterCategoria');
+        select.innerHTML = '<option value="">Todas as categorias</option>';
+        categorias.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat.id;
+            option.textContent = cat.nome;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Erro ao carregar categorias:', error.message);
+    }
+}
 </script>
 </body>
 </html>
