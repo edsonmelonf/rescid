@@ -800,7 +800,7 @@ window.onload = async function () {
       selectPatrocinador.innerHTML = '<option value="">Selecione...</option>';
       categorias.forEach(cat => {
         const option = document.createElement('option');
-        option.value = cat.nome;
+        option.value = cat.id; // era cat.nome
         option.textContent = cat.nome;
         selectPatrocinador.appendChild(option);
 });
@@ -985,8 +985,10 @@ window.onload = async function () {
     container.innerHTML = `<p style="color:#627d98; padding:24px 0;">Carregando parceiros...</p>`;
     try {
       parceiros = await buscarPatrocinadores();
+      console.log('parceiros:', parceiros); // adiciona essa linha
       renderizarPatrocinadores();
     } catch (error) {
+      console.log('erro:', error); // e essa
       container.innerHTML = `<p style="color:#e53e3e; padding:24px 0;">Erro ao carregar parceiros.</p>`;
     }
   }
@@ -1009,7 +1011,7 @@ window.onload = async function () {
             <h3>${p.nome}</h3>
             <p>🌐 ${p.site || 'Sem site'}</p>
           </div>
-          <span class="p-badge-cat">${p.categoria || ''}</span>
+          <span class="p-badge-cat">${p.categorias?.nome || 'Sem categoria'}</span>
         </div>
         <div class="p-info-body">
           <div class="p-info-line">📞 <span>${p.telefone || 'Sem telefone'}</span></div>
@@ -1023,14 +1025,14 @@ window.onload = async function () {
   }
 
   async function cadastrarPatrocinador() {
-  const dados = {
-    nome:      document.getElementById('pNomeEmpresa').value.trim(),
-    categoria: document.getElementById('pCategoria').value.trim(),
-    site:      document.getElementById('pSite').value.trim(),
-    telefone:  document.getElementById('pContato').value.trim(),
-    email:     document.getElementById('pEmail').value.trim(),
-    descricao: document.getElementById('pDescricao').value.trim(),
-  };
+    const dados = {
+      nome:         document.getElementById('pNomeEmpresa').value.trim(),
+      categoria_id: Number(document.getElementById('pCategoria').value),  // agora é o ID
+      site:         document.getElementById('pSite').value.trim(),
+      telefone:     document.getElementById('pContato').value.trim(),
+      email:        document.getElementById('pEmail').value.trim(),
+      descricao:    document.getElementById('pDescricao').value.trim(),
+};
 
   // Limpa erros anteriores antes de qualquer coisa
   const mapa = {
@@ -1105,20 +1107,55 @@ window.onload = async function () {
   }
 
   // ── PERFIL ─────────────────────────────────────────────
-  function salvarAlteracoesPerfil() {
+  async function salvarAlteracoesPerfil() {
     const nome = document.getElementById('perfilNome').value.trim();
-    if (!nome) return;
+    const email = document.getElementById('perfilEmail').value.trim();
+    if (!nome || !email) return;
+
+    const token = localStorage.getItem('token');
+
+    const res = await fetch('http://localhost:3000/auth/me', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ nome, email })
+    });
+
+    if (!res.ok) {
+        exibirNotificacaoSucesso('Erro', 'Não foi possível salvar o perfil.');
+        return;
+    }
+
+    const user = await res.json();
+    localStorage.setItem('user', JSON.stringify(user));
+
     document.getElementById('sidebarNome').innerText = nome;
     document.getElementById('avatarIcon').innerText = nome.charAt(0).toUpperCase();
     exibirNotificacaoSucesso('Perfil Atualizado', 'Suas informações foram salvas.');
-  }
+}
 
-  function executarDeletarConta() {
+  async function executarDeletarConta() {
+      const token = localStorage.getItem('token');
+
+    const res = await fetch('http://localhost:3000/auth/me', {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!res.ok) {
+        exibirNotificacaoSucesso('Erro', 'Não foi possível remover a conta.');
+        return;
+    }
+
     fecharModal('modalDeletarConta');
     exibirNotificacaoSucesso('Conta Removida', 'Sua conta foi removida. Redirecionando...', function () {
-      logout();
+        logout();
     });
-  }
+}
 
   // ── UI: ABAS, SIDEBAR, MODAIS ──────────────────────────
   function switchTab(tabId) {

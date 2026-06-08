@@ -11,6 +11,7 @@ export const authenticate = async (req, res, next) => {
             return res.status(401).json({ message: 'Token de autenticação inválido' });
         }
         req.user = data.user;
+        req.token = token;
         next();
     } catch (error) {
         return res.status(500).json({ message: error.message });

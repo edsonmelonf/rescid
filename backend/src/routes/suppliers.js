@@ -12,29 +12,30 @@ router.post('/', validate(supplierSchema), async (req, res) => {
     const client = supabaseAuth(token);
 
     const { data, error } = await client.from('patrocinadores').insert({
-        nome: req.body.nome,
-        categoria: req.body.categoria,
-        site: req.body.site,
-        descricao: req.body.descricao,
-        telefone: req.body.telefone,
-        email: req.body.email,
-    }).select('*');
+        nome:         req.body.nome,
+        categoria_id: req.body.categoria_id,
+        site:         req.body.site,
+        descricao:    req.body.descricao,
+        telefone:     req.body.telefone,
+        email:        req.body.email,
+    }).select('*, categorias(nome)');
 
-    if (error) {
-        return res.status(500).json({ message: error.message });
-    }
+    if (error) return res.status(500).json({ message: error.message });
     res.status(201).json(data);
 });
 
 router.get('/', async (req, res) => {
     const { categoria, cidade } = req.query;
-    let query = supabase.from('patrocinadores').select('*');
-    if (categoria) query = query.eq('categoria', categoria);
+    
+    const token = req.headers.authorization?.split(' ')[1];
+    const client = token ? supabaseAuth(token) : supabase;
+    
+    let query = client.from('patrocinadores').select('*, categorias(nome)');
+    if (categoria) query = query.eq('categoria_id', categoria);
     if (cidade) query = query.eq('cidade', cidade);
+    
     const { data, error } = await query;
-    if (error) {
-        return res.status(500).json({ message: error.message });
-    }
+    if (error) return res.status(500).json({ message: error.message });
     res.status(200).json(data);
 });
 
@@ -52,15 +53,13 @@ router.get('/:id', async(req, res) => {
 
 router.delete('/:id', async (req, res) => {
     const id = Number(req.params.id);
-    const { data, error } = await supabase.from('patrocinadores').delete().select().eq('id', id);
-    if (error) {
-        return res.status(500).json({ message: error.message });
-    }
-    if (!data || data.length === 0) {
-        return res.status(404).json({ message: 'Patrocinador não encontrado' });
-    }   
-    res.status(204).send();
+    const token = req.headers.authorization?.split(' ')[1];
+    const client = token ? supabaseAuth(token) : supabase;
     
+    const { data, error } = await client.from('patrocinadores').delete().select().eq('id', id);
+    if (error) return res.status(500).json({ message: error.message });
+    if (!data || data.length === 0) return res.status(404).json({ message: 'Patrocinador não encontrado' });
+    res.status(204).send();
 });
 
 router.put('/:id', validate(supplierSchema), async (req, res) => {
